@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>韩语背单词 · 三期完整版</title>
+    <title>韩语背单词 · 优化版</title>
     <link rel="manifest" href="data:application/manifest+json,%7B%22name%22%3A%22%E9%9F%A9%E8%AF%AD%E8%83%8C%E5%8D%95%E8%AF%8D%22%2C%22short_name%22%3A%22%E8%83%8C%E5%8D%95%E8%AF%8D%22%2C%22start_url%22%3A%22.%2F%22%2C%22display%22%3A%22standalone%22%2C%22background_color%22%3A%22%23fffdf9%22%2C%22theme_color%22%3A%22%23f7a8c4%22%7D">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="default">
@@ -31,6 +31,16 @@
         body.dark {
             background: #1e1e2e;
             color: #e0e0e0;
+        }
+        body.dark ::-webkit-scrollbar {
+            width: 6px;
+        }
+        body.dark ::-webkit-scrollbar-track {
+            background: #2a2a3c;
+        }
+        body.dark ::-webkit-scrollbar-thumb {
+            background: #5a4a5a;
+            border-radius: 3px;
         }
         .app-container {
             width: 100%;
@@ -397,9 +407,42 @@
             max-width: 400px;
             max-height: 80vh;
             overflow-y: auto;
+            color: #3a3a3a;
         }
         body.dark .modal-content {
             background: #2a2a3c;
+            color: #e0e0e0;
+            scrollbar-color: #5a4a5a #2a2a3c;
+        }
+        body.dark .modal-content::-webkit-scrollbar {
+            width: 6px;
+        }
+        body.dark .modal-content::-webkit-scrollbar-track {
+            background: #2a2a3c;
+            border-radius: 3px;
+        }
+        body.dark .modal-content::-webkit-scrollbar-thumb {
+            background: #5a4a5a;
+            border-radius: 3px;
+        }
+        body.dark .modal-content input,
+        body.dark .modal-content textarea,
+        body.dark .modal-content select {
+            background: #1e1e2e;
+            border-color: #4a3a4a;
+            color: #e0e0e0;
+        }
+        body.dark .modal-content h3 {
+            color: #e0e0e0;
+        }
+        body.dark .modal-content .btn-primary {
+            background: #c06080;
+            color: #fff;
+        }
+        body.dark .modal-content .btn-sm {
+            background: #2a2a3c;
+            border-color: #4a3a4a;
+            color: #c0b0c0;
         }
         .progress-info {
             font-size: 13px;
@@ -667,6 +710,15 @@
         body.dark label {
             color: #c0b0c0;
         }
+        .voice-hint {
+            font-size: 11px;
+            color: #c66b7b;
+            margin-top: 4px;
+            display: none;
+        }
+        body.dark .voice-hint {
+            color: #f08090;
+        }
     </style>
 </head>
 <body id="mainBody">
@@ -683,6 +735,8 @@
             <g id="icon-next"><polyline points="9,5 17,12 9,19" fill="none" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/><line x1="17" y1="5" x2="17" y2="19" stroke-width="2.5" stroke-linecap="round"/></g>
             <g id="icon-edit"><path d="M17 3a2.828 2.828 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5L17 3z" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></g>
             <g id="icon-bell"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><path d="M13.73 21a2 2 0 0 1-3.46 0" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></g>
+            <g id="icon-download"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><polyline points="7 10 12 15 17 10" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><line x1="12" y1="15" x2="12" y2="3" stroke-width="2" stroke-linecap="round"/></g>
+            <g id="icon-upload"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><polyline points="17 8 12 3 7 8" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><line x1="12" y1="3" x2="12" y2="15" stroke-width="2" stroke-linecap="round"/></g>
         </defs>
     </svg>
 
@@ -733,8 +787,8 @@
                 <button class="headphone-btn" onclick="speakSpellWord()" style="margin:8px 0;font-size:28px;">🎧</button>
                 <input class="input-field" id="spellInput" placeholder="输入韩语拼写..." autocomplete="off" autocapitalize="off" style="text-align:center;font-size:18px;">
                 <div style="display:flex;flex-direction:column;gap:8px;width:100%;">
-                    <button class="btn-primary" onclick="checkSpell()">✅ 检查</button>
-                    <button class="btn-secondary" onclick="skipSpellWord()"><svg width="16" height="16" viewBox="0 0 24 24" style="stroke:currentColor;fill:none;"><use href="#icon-next"/></svg> 下一词</button>
+                    <button class="btn-primary" onclick="checkSpell()" id="spellCheckBtn">✅ 检查</button>
+                    <button class="btn-secondary" onclick="skipSpellWord()" id="spellNextBtn"><svg width="16" height="16" viewBox="0 0 24 24" style="stroke:currentColor;fill:none;"><use href="#icon-next"/></svg> 下一词</button>
                 </div>
                 <div id="spellFeedback" style="margin-top:8px;font-size:16px;"></div>
                 <div id="spellCorrection" style="font-size:12px;color:#c66b7b;margin-top:4px;"></div>
@@ -802,10 +856,20 @@
                 <p style="font-size:11px;color:#b5a0b5;margin-top:4px;" id="reminderStatus">提醒已关闭</p>
             </div>
             <div class="card-face" style="margin-bottom:10px;">
+                <div class="section-title">💾 数据备份与恢复</div>
+                <div class="filter-row" style="gap:6px;">
+                    <button class="btn-primary" onclick="exportAllData()" style="flex:1;padding:10px 8px;font-size:13px;"><svg width="16" height="16" viewBox="0 0 24 24" style="stroke:white;fill:none;"><use href="#icon-download"/></svg> 导出JSON</button>
+                    <button class="btn-secondary" onclick="document.getElementById('importJsonFile').click()" style="flex:1;padding:10px 8px;font-size:13px;"><svg width="16" height="16" viewBox="0 0 24 24" style="stroke:currentColor;fill:none;"><use href="#icon-upload"/></svg> 导入JSON</button>
+                    <input type="file" id="importJsonFile" accept=".json" style="display:none;" onchange="handleImportJson(event)">
+                </div>
+                <p style="font-size:10px;color:#b5a0b5;margin-top:4px;">导出包含所有单词本、设置和学习记录</p>
+            </div>
+            <div class="card-face" style="margin-bottom:10px;">
                 <div class="section-title">⚙️ 通用设置</div>
                 <div class="filter-row"><label>每日新词目标：</label><input class="input-field input-field-sm" id="dailyNewGoal" type="number" value="10" style="width:65px;" onchange="setDailyGoal(this.value)"></div>
                 <div class="filter-row"><label>卡片字体大小：</label><input class="input-field input-field-sm" id="fontSizeInput" type="number" value="36" style="width:65px;" onchange="changeFontSize(this.value)"></div>
                 <div class="filter-row" style="align-items:center;"><label>韩语发音：</label><select class="input-field input-field-sm" id="voiceSelect" onchange="selectVoice(this.value)" style="width:auto;flex:1;margin-bottom:0;"><option value="auto">自动选择</option></select></div>
+                <p class="voice-hint" id="voiceHint">⚠️ 未检测到韩语发音人，请在系统中添加韩语语音</p>
                 <button class="btn-primary" onclick="toggleDarkMode()" style="margin-top:8px;">🌙 夜间模式</button>
                 <button class="btn-primary" style="margin-top:6px;" onclick="toggleLang()">🇰🇷 한국어 모드</button>
             </div>
@@ -822,7 +886,13 @@
     </div>
 
     <script>
-        const STORAGE_KEY = 'korean_v5_settings';
+        // ============ 工具函数 ============
+        function escapeHTML(str) {
+            if (!str) return '';
+            return String(str).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+        }
+
+        const STORAGE_KEY = 'korean_v6_optimized';
         let appData = {
             books: [],
             activeBookId: 'default',
@@ -843,6 +913,8 @@
         let reviewFilter = 'all';
         let editingWordId = null;
         let reminderTimer = null;
+        let currentActiveTab = 'review';
+        let spellAutoNextTimer = null;
 
         const romaMap = {
             'ㄱ': 'g', 'ㄲ': 'kk', 'ㄴ': 'n', 'ㄷ': 'd', 'ㄸ': 'tt', 'ㄹ': 'r/l', 'ㅁ': 'm', 'ㅂ': 'b', 'ㅃ': 'pp',
@@ -860,8 +932,8 @@
             if (raw) {
                 try { appData = JSON.parse(raw); } catch (e) { initDefault();
                     return; }
-                appData.books.forEach(b => b.words.forEach(w => { if (!w.roma) w.roma = getRoma(w.korean); if (!
-                        w.tags) w.tags = []; }));
+                appData.books.forEach(b => b.words.forEach(w => { if (!w.roma) w.roma = getRoma(w.korean); if (!w
+                        .tags) w.tags = []; }));
                 if (!appData.stats) appData.stats = { checkIns: [], todayNewCount: 0, todayReviewCount: 0,
                     todayCorrect: 0, todayTotal: 0, streak: 0, dailyNewGoal: 10 };
                 if (!appData.settings) appData.settings = { darkMode: false, fontSize: 36, lang: 'zh',
@@ -919,6 +991,7 @@
                 easyStages: ri.easyStages && ri.easyStages.length ? ri.easyStages : [1, 3, 7, 15, 30] };
         }
 
+        // ============ 语音相关 ============
         function loadVoices() {
             return new Promise(r => { let voices = speechSynth.getVoices(); if (voices.length) { updateVoiceList(
                         voices);
@@ -929,10 +1002,18 @@
 
         function updateVoiceList(voices) {
             allKoreanVoices = voices.filter(v => v.lang.startsWith('ko'));
-            let sel = document.getElementById('voiceSelect'); if (!sel) return;
-            sel.innerHTML = '<option value="auto">自动选择</option>';
-            allKoreanVoices.forEach(v => { sel.innerHTML +=
-                    `<option value="${v.voiceURI}" ${appData.settings.selectedVoiceURI===v.voiceURI?'selected':''}>${v.name}</option>`; });
+            let sel = document.getElementById('voiceSelect');
+            let hint = document.getElementById('voiceHint');
+            if (!sel) return;
+            if (allKoreanVoices.length === 0) {
+                sel.innerHTML = '<option value="auto">自动选择 (无韩语发音人)</option>';
+                if (hint) hint.style.display = 'block';
+            } else {
+                sel.innerHTML = '<option value="auto">自动选择</option>';
+                allKoreanVoices.forEach(v => { sel.innerHTML +=
+                        `<option value="${escapeHTML(v.voiceURI)}" ${appData.settings.selectedVoiceURI===v.voiceURI?'selected':''}>${escapeHTML(v.name)}</option>`; });
+                if (hint) hint.style.display = 'none';
+            }
             selectVoice(appData.settings.selectedVoiceURI);
         }
 
@@ -941,6 +1022,8 @@
             saveData();
             koreanVoice = (uri === 'auto' || !allKoreanVoices.length) ? (allKoreanVoices.length ? allKoreanVoices[
                 0] : null) : (allKoreanVoices.find(v => v.voiceURI === uri) || allKoreanVoices[0] || null);
+            let hint = document.getElementById('voiceHint');
+            if (hint) hint.style.display = allKoreanVoices.length === 0 ? 'block' : 'none';
         }
 
         function speak(text, rate) {
@@ -964,10 +1047,12 @@
                 .classList.add('active');
             refreshReview(); }
 
+        // ============ 学习卡片 ============
         let currentWord = null,
             cardFlipped = false;
         let touchStartX = 0,
             touchStartY = 0;
+        let swipeThreshold = 40;
 
         function getFilteredWords() {
             let words = getWords().filter(w => !w.mastered);
@@ -984,7 +1069,8 @@
                 document.getElementById('flipCard').style.display = 'none';
                 document.getElementById('actionButtons').style.display = 'none';
                 document.getElementById('reviewProgress').innerText = '🎉 暂无待复习单词';
-                document.getElementById('swipeHint').style.display = 'none'; return; }
+                document.getElementById('swipeHint').style.display = 'none';
+                currentWord = null; return; }
             document.getElementById('emptyReview').style.display = 'none';
             document.getElementById('flipCard').style.display = 'block';
             document.getElementById('actionButtons').style.display = 'flex';
@@ -1001,9 +1087,17 @@
             if (currentWord.pos === '动词' || currentWord.pos === '形容词') { let stem = currentWord.korean.endsWith(
                     '다') ? currentWord.korean.slice(0, -1) : currentWord.korean;
                 conjBox.style.display = 'block';
-                conjBox.innerHTML = `活用：${stem}아/어요 | ${stem}았/었어요 | 안 ${currentWord.korean}`; } else conjBox.style
+                conjBox.innerHTML = `活用：${escapeHTML(stem)}아/어요 | ${escapeHTML(stem)}았/었어요 | 안 ${escapeHTML(currentWord.korean)}`; } else conjBox.style
                 .display = 'none';
             document.getElementById('reviewProgress').innerText = `📌 待复习 ${due.length} 个`;
+            updateSwipeThreshold();
+        }
+
+        function updateSwipeThreshold() {
+            let card = document.getElementById('flipCard');
+            if (card) {
+                swipeThreshold = Math.max(30, card.offsetWidth * 0.2);
+            }
         }
 
         function flipCard() { if (!currentWord) return;
@@ -1017,6 +1111,9 @@
                 intervals = getReviewIntervals();
             appData.stats.todayReviewCount++;
             appData.stats.todayTotal++;
+            if (w.reviewCount === 0) {
+                appData.stats.todayNewCount++;
+            }
             if (type === 'hard') { w.nextReview = now + intervals.hardMs;
                 w.wrongCount++; } else if (type === 'fuzzy') { w.nextReview = now + intervals.fuzzyMs; } else { let
                     stages = intervals.easyStages,
@@ -1034,12 +1131,14 @@
             let card = document.getElementById('flipCard');
             card.addEventListener('touchstart', e => { if (!currentWord) return;
                 touchStartX = e.touches[0].clientX;
-                touchStartY = e.touches[0].clientY; }, { passive: true });
+                touchStartY = e.touches[0].clientY;
+                updateSwipeThreshold(); }, { passive: true });
             card.addEventListener('touchend', e => { if (!currentWord) return; let dx = e.changedTouches[0].clientX -
                     touchStartX,
-                    dy = e.changedTouches[0].clientY - touchStartY; if (Math.abs(dx) < 30 && Math.abs(dy) < 30)
-                    return; if (Math.abs(dy) > Math.abs(dx)) { if (dy < -40) flipCard(); } else { if (dx < -40)
-                        markWord('hard'); else if (dx > 40) markWord('easy'); } });
+                    dy = e.changedTouches[0].clientY - touchStartY; if (Math.abs(dx) < swipeThreshold && Math.abs(
+                        dy) < swipeThreshold) return; if (Math.abs(dy) > Math.abs(dx)) { if (dy < -
+                        swipeThreshold) flipCard(); } else { if (dx < -swipeThreshold) markWord('hard'); else if (
+                        dx > swipeThreshold) markWord('easy'); } });
         }
 
         function initKeyboard() {
@@ -1066,6 +1165,7 @@
                         break; } });
         }
 
+        // ============ 拼写页 ============
         let spellWord = null,
             spellList = [],
             spellErrorList = [];
@@ -1084,14 +1184,29 @@
             let words = getPracticeWords();
             spellList = appData.settings.spellMode === 'random' ? [...words].sort(() => Math.random() - 0.5) : [...words];
             spellErrorList = [];
-            spellCheckedCurrent = false; if (!spellList.length) { document.getElementById('spellProgress').innerText =
+            spellCheckedCurrent = false;
+            clearSpellAutoNext();
+            if (!spellList.length) { document.getElementById('spellProgress').innerText =
                     '没有可练习的单词';
-                document.getElementById('spellChinese').innerText = ''; return; }
+                document.getElementById('spellChinese').innerText = '';
+                document.getElementById('spellInput').value = '';
+                document.getElementById('spellFeedback').innerHTML = '';
+                document.getElementById('spellCorrection').innerHTML = '';
+                spellWord = null; return; }
             nextSpellWord();
         }
 
+        function clearSpellAutoNext() {
+            if (spellAutoNextTimer) { clearTimeout(spellAutoNextTimer);
+                spellAutoNextTimer = null; }
+        }
+
         function nextSpellWord() {
-            spellCheckedCurrent = false; if (!spellList.length) { if (spellErrorList.length) { spellList = [
+            clearSpellAutoNext();
+            spellCheckedCurrent = false;
+            document.getElementById('spellCheckBtn').disabled = false;
+            document.getElementById('spellCheckBtn').style.opacity = '1';
+            if (!spellList.length) { if (spellErrorList.length) { spellList = [
                     ...spellErrorList
                 ];
                 spellErrorList = []; if (appData.settings.spellMode === 'random') spellList.sort(() => Math.random() -
@@ -1108,38 +1223,71 @@
             document.getElementById('spellCorrection').innerHTML = '';
             document.getElementById('spellProgress').innerText =
                 `📝 剩余 ${spellList.length+1+(spellErrorList.length?spellErrorList.length:0)} 个 | ${appData.settings.spellMode==='random'?'随机':'顺序'}`;
+            document.getElementById('spellCheckBtn').disabled = false;
+            document.getElementById('spellCheckBtn').style.opacity = '1';
             setTimeout(() => document.getElementById('spellInput').focus(), 150);
         }
 
-        function checkSpell() { if (!spellWord || spellCheckedCurrent) return; let input = document.getElementById(
-                'spellInput').value.trim(); if (!input) return;
-            spellCheckedCurrent = true; if (input === spellWord.korean) { document.getElementById('spellFeedback')
-                .innerHTML = '<span class="correct">✅ 正确！</span>';
+        function checkSpell() {
+            if (!spellWord || spellCheckedCurrent) return;
+            let input = document.getElementById('spellInput').value.trim();
+            if (!input) return;
+            spellCheckedCurrent = true;
+            document.getElementById('spellCheckBtn').disabled = true;
+            document.getElementById('spellCheckBtn').style.opacity = '0.6';
+            clearSpellAutoNext();
+            let normalizedInput = input.normalize('NFC');
+            let normalizedCorrect = spellWord.korean.normalize('NFC');
+            if (normalizedInput === normalizedCorrect) {
+                document.getElementById('spellFeedback').innerHTML = '<span class="correct">✅ 正确！</span>';
                 document.getElementById('spellCorrection').innerHTML = '';
-                appData.stats.todayCorrect++; } else { let hint = getCorrectionHint(input, spellWord.korean);
+                appData.stats.todayCorrect++;
+                appData.stats.todayTotal++;
+                appData.stats.todayReviewCount++;
+                saveData();
+                updateStats();
+                spellAutoNextTimer = setTimeout(() => { nextSpellWord(); }, 1000);
+            } else {
+                let hint = getCorrectionHint(input, spellWord.korean);
                 document.getElementById('spellFeedback').innerHTML =
-                    `<span class="incorrect">❌ 错误！正确：<b>${spellWord.korean}</b></span>`;
-                document.getElementById('spellCorrection').innerHTML = hint ? '💡 提示：' + hint : '';
-                spellErrorList.push(spellWord); }
-            appData.stats.todayTotal++;
-            appData.stats.todayReviewCount++;
-            saveData();
-            updateStats();
-            setTimeout(nextSpellWord, 1200);
+                    `<span class="incorrect">❌ 错误！正确：<b>${escapeHTML(spellWord.korean)}</b></span>`;
+                document.getElementById('spellCorrection').innerHTML = hint ? '💡 提示：' + escapeHTML(hint) : '';
+                spellErrorList.push(spellWord);
+                appData.stats.todayTotal++;
+                appData.stats.todayReviewCount++;
+                saveData();
+                updateStats();
+            }
         }
 
-        function skipSpellWord() { if (!spellWord) return; if (!spellCheckedCurrent) spellErrorList.push(spellWord);
+        function skipSpellWord() {
+            if (!spellWord) return;
+            clearSpellAutoNext();
+            if (!spellCheckedCurrent) {
+                spellErrorList.push(spellWord);
+                appData.stats.todayTotal++;
+                appData.stats.todayReviewCount++;
+                saveData();
+                updateStats();
+            }
             spellCheckedCurrent = false;
             document.getElementById('spellFeedback').innerHTML = '';
             document.getElementById('spellCorrection').innerHTML = '';
-            nextSpellWord(); }
+            document.getElementById('spellCheckBtn').disabled = false;
+            document.getElementById('spellCheckBtn').style.opacity = '1';
+            nextSpellWord();
+        }
 
-        function toggleSpellMode() { appData.settings.spellMode = appData.settings.spellMode === 'random' ?
-                'sequential' : 'random';
+        function toggleSpellMode() {
+            let newMode = appData.settings.spellMode === 'random' ? 'sequential' : 'random';
+            let modeLabel = newMode === 'random' ? '随机拼写' : '顺序拼写';
+            if (!confirm(`确定切换到「${modeLabel}」模式吗？\n切换后将重新开始拼写练习。`)) return;
+            appData.settings.spellMode = newMode;
             saveData();
-            document.getElementById('spellModeToggle').innerText = appData.settings.spellMode === 'random' ?
+            document.getElementById('spellModeToggle').innerText = newMode === 'random' ?
                 '🔀 随机拼写' : '📋 顺序拼写';
-            startSpell(); }
+            startSpell();
+        }
 
         function getCorrectionHint(input, correct) {
             let hints = [];
@@ -1151,6 +1299,7 @@
             return hints.join('；');
         }
 
+        // ============ 词库管理 ============
         function updateBookDisplay() { document.getElementById('currentBookName').innerText = getActiveBook().name; }
 
         function openBookList() { renderBookListPopup();
@@ -1159,12 +1308,12 @@
         function renderBookListPopup() {
             document.getElementById('bookListContainer').innerHTML = appData.books.map((b, idx) => `
                 <div style="padding:10px;background:${b.id===appData.activeBookId?'#feeef4':'#fef9fb'};margin:4px 0;border-radius:12px;display:flex;justify-content:space-between;align-items:center;gap:4px;flex-wrap:wrap;">
-                    <span onclick="switchBook('${b.id}')" style="cursor:pointer;flex:1;min-width:100px;">📘 ${b.name} (${b.words.length})</span>
+                    <span onclick="switchBook('${escapeHTML(b.id)}')" style="cursor:pointer;flex:1;min-width:100px;">📘 ${escapeHTML(b.name)} (${b.words.length})</span>
                     <div style="display:flex;gap:2px;align-items:center;">
-                        <button onclick="event.stopPropagation();renameBook('${b.id}')" title="重命名" style="background:none;border:none;cursor:pointer;font-size:14px;padding:4px;">✏️</button>
-                        <button onclick="event.stopPropagation();moveBook('${b.id}','up')" title="上移" ${idx===0?'disabled':''} style="background:none;border:none;cursor:pointer;font-size:14px;padding:4px;${idx===0?'opacity:0.3;':''}">⬆️</button>
-                        <button onclick="event.stopPropagation();moveBook('${b.id}','down')" title="下移" ${idx===appData.books.length-1?'disabled':''} style="background:none;border:none;cursor:pointer;font-size:14px;padding:4px;${idx===appData.books.length-1?'opacity:0.3;':''}">⬇️</button>
-                        <button onclick="event.stopPropagation();deleteBook('${b.id}')" title="删除" style="background:none;border:none;cursor:pointer;font-size:16px;padding:4px;">🗑️</button>
+                        <button onclick="event.stopPropagation();renameBook('${escapeHTML(b.id)}')" title="重命名" style="background:none;border:none;cursor:pointer;font-size:14px;padding:4px;">✏️</button>
+                        <button onclick="event.stopPropagation();moveBook('${escapeHTML(b.id)}','up')" title="上移" ${idx===0?'disabled':''} style="background:none;border:none;cursor:pointer;font-size:14px;padding:4px;${idx===0?'opacity:0.3;':''}">⬆️</button>
+                        <button onclick="event.stopPropagation();moveBook('${escapeHTML(b.id)}','down')" title="下移" ${idx===appData.books.length-1?'disabled':''} style="background:none;border:none;cursor:pointer;font-size:14px;padding:4px;${idx===appData.books.length-1?'opacity:0.3;':''}">⬇️</button>
+                        <button onclick="event.stopPropagation();deleteBook('${escapeHTML(b.id)}')" title="删除" style="background:none;border:none;cursor:pointer;font-size:16px;padding:4px;">🗑️</button>
                     </div>
                 </div>`).join('');
         }
@@ -1178,7 +1327,9 @@
             saveData();
             updateBookDisplay();
             renderWordList();
-            closeBookListDirect(); }
+            closeBookListDirect();
+            if (currentActiveTab === 'review') refreshReview();
+            else if (currentActiveTab === 'spell') startSpell(); }
 
         function renameBook(id) { let book = appData.books.find(b => b.id === id); if (!book) return; let newName =
                 prompt('重命名单词本：', book.name); if (newName && newName.trim()) { book.name = newName.trim();
@@ -1204,13 +1355,15 @@
             document.getElementById('newBookName').value = ''; }
 
         function deleteBook(id) { if (appData.books.length <= 1) { alert('至少保留一个单词本'); return; } if (!confirm(
-                '确定删除这个单词本吗？')) return;
+                '确定删除这个单词本吗？所有单词将被永久删除。')) return;
             appData.books = appData.books.filter(b => b.id !== id); if (appData.activeBookId === id) appData
                 .activeBookId = appData.books[0].id;
             saveData();
             updateBookDisplay();
             renderWordList();
-            renderBookListPopup(); }
+            renderBookListPopup();
+            if (currentActiveTab === 'review') refreshReview();
+            else if (currentActiveTab === 'spell') startSpell(); }
 
         function addWord() {
             let kr = document.getElementById('inputKorean').value.trim(),
@@ -1227,8 +1380,6 @@
             renderWordList();
             ['inputKorean', 'inputChinese', 'inputPOS', 'inputExample', 'inputTags'].forEach(id => document
                 .getElementById(id).value = '');
-            appData.stats.todayNewCount++;
-            saveData();
             updateStats();
         }
 
@@ -1247,8 +1398,6 @@
             saveData();
             renderWordList();
             document.getElementById('batchInput').value = '';
-            appData.stats.todayNewCount += added;
-            saveData();
             updateStats();
             alert(`批量导入完成，新增 ${added} 个单词`);
         }
@@ -1286,20 +1435,74 @@
             URL.revokeObjectURL(url);
         }
 
+        // ============ 全局备份与恢复 ============
+        function exportAllData() {
+            let exportObj = {
+                version: 'v6',
+                exportedAt: new Date().toISOString(),
+                data: JSON.parse(JSON.stringify(appData))
+            };
+            let jsonStr = JSON.stringify(exportObj, null, 2);
+            let blob = new Blob([jsonStr], { type: 'application/json;charset=utf-8' }),
+                url = URL.createObjectURL(blob),
+                a = document.createElement('a');
+            a.href = url;
+            a.download = `korean-backup-${new Date().toISOString().slice(0,10)}.json`;
+            a.click();
+            URL.revokeObjectURL(url);
+        }
+
+        function handleImportJson(event) {
+            let file = event.target.files[0]; if (!file) return;
+            let reader = new FileReader();
+            reader.onload = function(e) {
+                try {
+                    let importObj = JSON.parse(e.target.result);
+                    let importedData = importObj.data || importObj;
+                    if (!importedData.books || !importedData.settings) {
+                        alert('❌ 无效的备份文件格式');
+                        return;
+                    }
+                    if (!confirm('⚠️ 导入将覆盖当前所有数据（单词本、设置、学习记录），确定继续吗？')) return;
+                    appData = importedData;
+                    appData.books.forEach(b => b.words.forEach(w => { if (!w.roma) w.roma = getRoma(w.korean); if (!w
+                            .tags) w.tags = []; }));
+                    if (!appData.stats) appData.stats = { checkIns: [], todayNewCount: 0, todayReviewCount: 0,
+                        todayCorrect: 0, todayTotal: 0, streak: 0, dailyNewGoal: 10 };
+                    if (!appData.settings.reviewIntervals) appData.settings.reviewIntervals = { hardMin: 10,
+                        fuzzyHr: 4, easyStages: [1, 3, 7, 15, 30] };
+                    if (!appData.settings.spellMode) appData.settings.spellMode = 'random';
+                    saveData();
+                    applySettings();
+                    updateBookDisplay();
+                    renderWordList();
+                    switchTab(currentActiveTab);
+                    alert('✅ 数据恢复成功！');
+                } catch (err) {
+                    alert('❌ 文件解析失败：' + err.message);
+                }
+            };
+            reader.readAsText(file);
+            event.target.value = '';
+        }
+
+        // ============ 单词列表渲染 ============
         function renderWordList() {
             let words = appData.showMastered ? getActiveBook().words.filter(w => w.mastered) : getActiveBook().words
                 .filter(w => !w.mastered);
             document.getElementById('wordListContainer').innerHTML = words.map(w => `
-                <div class="word-row-item" draggable="true" ondragstart="dragWord(event,'${w.id}')" onclick="showWordDetail('${w.id}')">
-                    <div><b>${w.korean}</b> - ${w.chinese}<span style="color:#b5a0b5;font-size:12px;">[${w.roma||''}]</span>${(w.tags||[]).map(t=>`<span class="tag">${t}</span>`).join('')}</div>
-                    <button onclick="event.stopPropagation();deleteWord('${w.id}')" style="background:none;border:none;cursor:pointer;font-size:16px;">🗑️</button>
+                <div class="word-row-item" draggable="true" ondragstart="dragWord(event,'${escapeHTML(String(w.id))}')" onclick="showWordDetail('${escapeHTML(String(w.id))}')">
+                    <div><b>${escapeHTML(w.korean)}</b> - ${escapeHTML(w.chinese)}<span style="color:#b5a0b5;font-size:12px;">[${escapeHTML(w.roma||'')}]</span>${(w.tags||[]).map(t=>`<span class="tag">${escapeHTML(t)}</span>`).join('')}</div>
+                    <button onclick="event.stopPropagation();deleteWord('${escapeHTML(String(w.id))}')" style="background:none;border:none;cursor:pointer;font-size:16px;">🗑️</button>
                 </div>`).join('') || '<div class="empty-message">📭 暂无单词</div>';
         }
 
-        function deleteWord(id) { if (!confirm('确定删除这个单词吗？')) return;
+        function deleteWord(id) { if (!confirm('确定删除这个单词吗？此操作不可恢复。')) return;
             getActiveBook().words = getActiveBook().words.filter(w => w.id != id);
             saveData();
-            renderWordList(); }
+            renderWordList();
+            if (currentActiveTab === 'review') refreshReview();
+            else if (currentActiveTab === 'spell') startSpell(); }
         let draggedWordId = null;
 
         function dragWord(e, id) { draggedWordId = id; }
@@ -1313,9 +1516,9 @@
                     target = e.target.closest('.word-row-item'); if (!target) return;
                 let match = target.getAttribute('onclick').match(/'([^']+)'/); if (!match) return;
                 let targetId = match[1],
-                    di = words.findIndex(w => w.id == draggedWordId),
-                    ti = words.findIndex(w => w.id == targetId); if (di > -1 && ti > -1 && di !== ti) { let moved =
-                        words.splice(di, 1)[0];
+                    di = words.findIndex(w => String(w.id) === String(draggedWordId)),
+                    ti = words.findIndex(w => String(w.id) === String(targetId)); if (di > -1 && ti > -1 && di !== ti) {
+                    let moved = words.splice(di, 1)[0];
                     words.splice(ti, 0, moved);
                     let ms = book.words.filter(w => w.mastered),
                         ums = appData.showMastered ? words : words;
@@ -1325,7 +1528,7 @@
                 draggedWordId = null; });
         });
 
-        function showWordDetail(id) { let w = getWords().find(w => w.id == id); if (!w) return;
+        function showWordDetail(id) { let w = getWords().find(w => String(w.id) === String(id)); if (!w) return;
             editingWordId = id;
             document.getElementById('detailKorean').innerText = w.korean;
             document.getElementById('editChinese').value = w.chinese;
@@ -1336,7 +1539,7 @@
             document.getElementById('wordDetailPopup').style.display = 'flex'; }
 
         function saveWordEdit() { if (!editingWordId) return;
-            let w = getWords().find(w => w.id == editingWordId); if (!w) return;
+            let w = getWords().find(w => String(w.id) === String(editingWordId)); if (!w) return;
             w.korean = document.getElementById('detailKorean').innerText.trim();
             w.chinese = document.getElementById('editChinese').value;
             w.pos = document.getElementById('editPOS').value;
@@ -1345,7 +1548,9 @@
             w.tags = document.getElementById('editTags').value.split(/[,，]/).map(s => s.trim()).filter(s => s);
             saveData();
             renderWordList();
-            closeWordDetailDirect(); }
+            closeWordDetailDirect();
+            if (currentActiveTab === 'review') refreshReview();
+            else if (currentActiveTab === 'spell') startSpell(); }
 
         function closeWordDetail(e) { if (e.target === document.getElementById('wordDetailPopup')) document.getElementById(
                 'wordDetailPopup').style.display = 'none'; }
@@ -1369,9 +1574,10 @@
             appData.books.forEach(b => b.words.forEach(w => { if (w.korean.includes(q) || w.chinese.includes(q) || (w
                     .roma && w.roma.includes(q))) results.push({ ...w, bookName: b.name }); }));
             document.getElementById('searchResults').innerHTML = results.slice(0, 50).map(r => `
-                <div style="padding:8px;background:#f9f9f9;margin:4px 0;border-radius:8px;cursor:pointer;" onclick="closeSearchDirect();showWordDetail('${r.id}')"><b>${r.korean}</b> - ${r.chinese} <span style="color:#888;">[${r.bookName}]</span></div>
+                <div style="padding:8px;background:#f9f9f9;margin:4px 0;border-radius:8px;cursor:pointer;" onclick="closeSearchDirect();showWordDetail('${escapeHTML(String(r.id))}')"><b>${escapeHTML(r.korean)}</b> - ${escapeHTML(r.chinese)} <span style="color:#888;">[${escapeHTML(r.bookName)}]</span></div>
             `).join('') || '<p style="color:#b5a0b5;">无结果</p>'; }
 
+        // ============ 统计与显示 ============
         function updateStats() {
             let s = appData.stats;
             document.getElementById('statNew').innerText = s.todayNewCount;
@@ -1484,17 +1690,27 @@
                     desc: '1天内' }, { key: '3day', label: '1-3天', color: '#8fbc8f', desc: '巩固期' }, { key: '7day',
                     label: '3-7天', color: '#5f9b7a', desc: '稳定期' }, { key: '15day', label: '7-15天',
                     color: '#4a90a4', desc: '长期' }, { key: '30day', label: '15-30天', color: '#6b7db3',
-                    desc: '牢固' }, { key: 'mastered', label: '已掌握', color: '#a080c0', desc: '熟练' }];
+                    desc: '牢固' }, { key: 'over30day', label: '超30天', color: '#c08060',
+                desc: '未掌握' }, { key: 'mastered', label: '已掌握', color: '#a080c0', desc: '熟练' }];
             let allWords = [];
             appData.books.forEach(b => allWords.push(...b.words));
             const counts = {};
             stages.forEach(s => counts[s.key] = 0);
-            allWords.forEach(w => { if (w.mastered) counts['mastered']++; else { const diff = w.nextReview - now; if (
-                        diff <= 0) counts['due']++; else if (diff <= 600000) counts['10min']++; else if (diff <=
-                        14400000) counts['4hr']++; else if (diff <= 86400000) counts['1day']++; else if (diff <=
-                        259200000) counts['3day']++; else if (diff <= 604800000) counts['7day']++; else if (diff <=
-                        1296000000) counts['15day']++; else if (diff <= 2592000000) counts['30day']++;
-                else counts['mastered']++; } });
+            allWords.forEach(w => {
+                if (w.mastered) counts['mastered']++;
+                else {
+                    const diff = w.nextReview - now;
+                    if (diff <= 0) counts['due']++;
+                    else if (diff <= 600000) counts['10min']++;
+                    else if (diff <= 14400000) counts['4hr']++;
+                    else if (diff <= 86400000) counts['1day']++;
+                    else if (diff <= 259200000) counts['3day']++;
+                    else if (diff <= 604800000) counts['7day']++;
+                    else if (diff <= 1296000000) counts['15day']++;
+                    else if (diff <= 2592000000) counts['30day']++;
+                    else counts['over30day']++;
+                }
+            });
             const maxCount = Math.max(...Object.values(counts), 1);
             chartEl.innerHTML = stages.map(s => { const h = Math.max(4, Math.round((counts[s.key] / maxCount) *
                     140)); return `<div class="eb-bar-wrapper" title="${s.desc}: ${counts[s.key]}个"><div class="eb-bar-count">${counts[s.key]}</div><div class="eb-bar" style="height:${h}px;background:${s.color};${counts[s.key]===0?'opacity:0.35;':''}"></div><div class="eb-bar-label">${s.label}</div></div>`; })
@@ -1503,9 +1719,10 @@
                 `<span><span class="eb-legend-dot" style="background:${s.color};"></span>${s.label}(${s.desc})</span>`
                 ).join('');
             totalEl.innerText =
-                `📚 总词汇量：${allWords.length} 个 | 待复习：${counts['due']} 个 | 已掌握：${counts['mastered']} 个`;
+                `📚 总词汇量：${allWords.length} 个 | 待复习：${counts['due']} 个 | 已掌握：${counts['mastered']} 个 | 超30天未掌握：${counts['over30day']} 个`;
         }
 
+        // ============ 提醒 ============
         function toggleReminder() {
             if (!('Notification' in window)) { alert('浏览器不支持通知'); return; }
             if (appData.settings.reminderEnabled) { appData.settings.reminderEnabled = false; if (reminderTimer)
@@ -1534,6 +1751,7 @@
                         tag: 'korean-reminder' }); } }, 30000);
         }
 
+        // ============ 设置应用 ============
         function applySettings() { if (appData.settings.darkMode) document.body.classList.add('dark');
             changeFontSize(appData.settings.fontSize);
             updateStats(); if (appData.settings.reminderEnabled) setupReminder();
@@ -1568,7 +1786,9 @@
             saveData();
         }
 
+        // ============ 标签切换 ============
         function switchTab(tab) {
+            currentActiveTab = tab;
             document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
             document.querySelectorAll('.nav-item').forEach(b => b.classList.remove('active'));
             const pageEl = document.getElementById(tab + 'Page');
@@ -1584,16 +1804,22 @@
         document.querySelectorAll('.nav-item').forEach(btn => btn.addEventListener('click', () => switchTab(btn.dataset
             .tab)));
 
+        // ============ 窗口尺寸变化时更新滑动阈值 ============
+        window.addEventListener('resize', () => {
+            updateSwipeThreshold();
+        });
+
+        // ============ 初始化 ============
         async function init() { initData();
             await loadVoices();
             selectVoice(appData.settings.selectedVoiceURI);
             applySettings();
             updateBookDisplay();
+            updateSwipeThreshold();
             initSwipe();
             initKeyboard();
             switchTab('review'); }
         init();
-        if ('serviceWorker' in navigator) { navigator.serviceWorker.register('sw.js', { scope: './' }).catch(() => {}); }
     </script>
 </body>
 </html>
