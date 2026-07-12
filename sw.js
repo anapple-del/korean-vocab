@@ -1,4 +1,4 @@
-const CACHE_NAME = 'korean-vocab-v5';
+const CACHE_NAME = 'korean-vocab-v15';
 const urlsToCache = ['./', './index.html'];
 
 self.addEventListener('install', event => {
