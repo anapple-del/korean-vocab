@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>韩语背单词 · 优化版</title>
+    <title>韩语背单词 · 音效优化版</title>
     <link rel="manifest" href="data:application/manifest+json,%7B%22name%22%3A%22%E9%9F%A9%E8%AF%AD%E8%83%8C%E5%8D%95%E8%AF%8D%22%2C%22short_name%22%3A%22%E8%83%8C%E5%8D%95%E8%AF%8D%22%2C%22start_url%22%3A%22.%2F%22%2C%22display%22%3A%22standalone%22%2C%22background_color%22%3A%22%23fffdf9%22%2C%22theme_color%22%3A%22%23f7a8c4%22%7D">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="default">
@@ -188,6 +188,21 @@
             background: #5a3a4a;
             color: #f5a0b0;
         }
+        .pos-badge-sm {
+            background: #f3e8ff;
+            color: #7b4fa0;
+            font-size: 10px;
+            padding: 2px 8px;
+            border-radius: 10px;
+            display: inline-block;
+            margin-left: 4px;
+            font-weight: 500;
+            vertical-align: middle;
+        }
+        body.dark .pos-badge-sm {
+            background: #3a2a50;
+            color: #c0a0e0;
+        }
         .example-text {
             font-size: 14px;
             color: #8e7a8a;
@@ -226,6 +241,22 @@
             transition: 0.2s;
         }
         .headphone-btn:active {
+            background: #fce4ec;
+            color: #b5496c;
+        }
+        .headphone-btn-sm {
+            background: none;
+            border: none;
+            font-size: 17px;
+            cursor: pointer;
+            color: #c4aabc;
+            padding: 2px 6px;
+            border-radius: 50%;
+            transition: 0.2s;
+            flex-shrink: 0;
+            line-height: 1;
+        }
+        .headphone-btn-sm:active {
             background: #fce4ec;
             color: #b5496c;
         }
@@ -378,6 +409,7 @@
             box-shadow: 0 2px 8px rgba(0, 0, 0, 0.02);
             cursor: pointer;
             transition: 0.2s;
+            gap: 8px;
         }
         .word-row-item:active {
             background: #fdf5f8;
@@ -385,6 +417,20 @@
         }
         body.dark .word-row-item {
             background: #2a2a3c;
+        }
+        .word-row-item-left {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            flex: 1;
+            min-width: 0;
+            flex-wrap: wrap;
+        }
+        .word-row-item-right {
+            display: flex;
+            align-items: center;
+            gap: 4px;
+            flex-shrink: 0;
         }
         .modal {
             display: none;
@@ -719,6 +765,35 @@
         body.dark .voice-hint {
             color: #f08090;
         }
+        .google-tts-badge {
+            display: inline-block;
+            background: #e8f5e9;
+            color: #2e7d32;
+            font-size: 10px;
+            padding: 2px 7px;
+            border-radius: 8px;
+            margin-left: 4px;
+            font-weight: 600;
+        }
+        body.dark .google-tts-badge {
+            background: #1b3a1b;
+            color: #7dce82;
+        }
+        .word-info-line {
+            display: flex;
+            align-items: center;
+            gap: 4px;
+            flex-wrap: wrap;
+            font-size: 13px;
+            color: #8e7a8a;
+        }
+        body.dark .word-info-line {
+            color: #a090a0;
+        }
+        .placeholder-text {
+            color: #c0b0c0;
+            font-style: italic;
+        }
     </style>
 </head>
 <body id="mainBody">
@@ -737,6 +812,7 @@
             <g id="icon-bell"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><path d="M13.73 21a2 2 0 0 1-3.46 0" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></g>
             <g id="icon-download"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><polyline points="7 10 12 15 17 10" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><line x1="12" y1="15" x2="12" y2="3" stroke-width="2" stroke-linecap="round"/></g>
             <g id="icon-upload"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><polyline points="17 8 12 3 7 8" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><line x1="12" y1="3" x2="12" y2="15" stroke-width="2" stroke-linecap="round"/></g>
+            <g id="icon-speaker"><path d="M11 5L6 9H2v6h4l5 4V5z" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><path d="M15.54 8.46a5 5 0 010 7.07" fill="none" stroke-width="2" stroke-linecap="round"/><path d="M19.07 4.93a10 10 0 010 14.14" fill="none" stroke-width="2" stroke-linecap="round"/></g>
         </defs>
     </svg>
 
@@ -807,11 +883,12 @@
                     <textarea class="input-field" id="batchInput" placeholder="每行一个：韩语,释义&#10;例如：&#10;사랑,爱情&#10;공부,学习" style="min-height:90px;font-size:13px;"></textarea>
                     <button class="btn-primary" onclick="batchAddWords()">➕ 批量导入</button>
                 </details>
-                <input class="input-field" id="inputKorean" placeholder="韩语单词">
-                <input class="input-field" id="inputChinese" placeholder="中文释义">
-                <input class="input-field" id="inputPOS" placeholder="词性">
+                <input class="input-field" id="inputKorean" placeholder="韩语单词 (可单独填写)">
+                <input class="input-field" id="inputChinese" placeholder="中文释义 (可单独填写)">
+                <input class="input-field" id="inputPOS" placeholder="词性 (如：名词、动词、形容词)">
                 <input class="input-field" id="inputExample" placeholder="例句">
                 <div class="filter-row"><input class="input-field" id="inputTags" placeholder="标签" style="flex:1;"><button class="btn-primary" onclick="addWord()" style="width:auto;flex-shrink:0;">➕ 添加</button></div>
+                <p style="font-size:11px;color:#b5a0b5;margin-top:4px;">💡 只需填写韩语或释义之一即可添加</p>
             </div>
             <div class="filter-row"><button class="filter-btn" onclick="toggleMasteredView()">📦 熟词箱</button><button class="filter-btn" onclick="openSearch()">🔍 全局搜索</button></div>
             <div class="word-list" id="wordListContainer"></div>
@@ -869,7 +946,12 @@
                 <div class="filter-row"><label>每日新词目标：</label><input class="input-field input-field-sm" id="dailyNewGoal" type="number" value="10" style="width:65px;" onchange="setDailyGoal(this.value)"></div>
                 <div class="filter-row"><label>卡片字体大小：</label><input class="input-field input-field-sm" id="fontSizeInput" type="number" value="36" style="width:65px;" onchange="changeFontSize(this.value)"></div>
                 <div class="filter-row" style="align-items:center;"><label>韩语发音：</label><select class="input-field input-field-sm" id="voiceSelect" onchange="selectVoice(this.value)" style="width:auto;flex:1;margin-bottom:0;"><option value="auto">自动选择</option></select></div>
-                <p class="voice-hint" id="voiceHint">⚠️ 未检测到韩语发音人，请在系统中添加韩语语音</p>
+                <p class="voice-hint" id="voiceHint">⚠️ 未检测到韩语发音人，请在系统中添加韩语语音或使用Google TTS</p>
+                <div class="filter-row" style="align-items:center;margin-top:10px;">
+                    <label>🔊 操作音效：</label>
+                    <button class="btn-sm" id="soundToggleBtn" onclick="toggleSound()">🔊 开启</button>
+                    <span style="font-size:11px;color:#b5a0b5;" id="soundStatus">音效已开启</span>
+                </div>
                 <button class="btn-primary" onclick="toggleDarkMode()" style="margin-top:8px;">🌙 夜间模式</button>
                 <button class="btn-primary" style="margin-top:6px;" onclick="toggleLang()">🇰🇷 한국어 모드</button>
             </div>
@@ -892,18 +974,19 @@
             return String(str).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#39;');
         }
 
-        const STORAGE_KEY = 'korean_v6_optimized';
+        const STORAGE_KEY = 'korean_v7_sound';
+        const GOOGLE_TTS_URI = 'google-tts';
         let appData = {
             books: [],
             activeBookId: 'default',
             showMastered: false,
             stats: { checkIns: [], todayNewCount: 0, todayReviewCount: 0, todayCorrect: 0, todayTotal: 0,
-            streak: 0, dailyNewGoal: 10 },
+                streak: 0, dailyNewGoal: 10 },
             settings: {
                 darkMode: false, fontSize: 36, lang: 'zh',
                 reviewIntervals: { hardMin: 10, fuzzyHr: 4, easyStages: [1, 3, 7, 15, 30] },
                 spellMode: 'random', reminderEnabled: false, reminderTime: '09:00',
-                selectedVoiceURI: 'auto'
+                selectedVoiceURI: 'auto', soundEnabled: true
             }
         };
         let currentSpeed = 1.0;
@@ -915,6 +998,155 @@
         let reminderTimer = null;
         let currentActiveTab = 'review';
         let spellAutoNextTimer = null;
+        let currentGoogleAudio = null;
+
+        // ============ 音效系统 (新增开关控制) ============
+        let audioCtx = null;
+        function ensureAudioContext() {
+            if (!audioCtx) {
+                audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+            }
+            if (audioCtx.state === 'suspended') {
+                audioCtx.resume().catch(() => {});
+            }
+            return audioCtx;
+        }
+
+        function playSoundEffect(type) {
+            // 检查音效开关
+            if (!appData.settings.soundEnabled) return;
+            try {
+                const ctx = ensureAudioContext();
+                const now = ctx.currentTime;
+                const osc = ctx.createOscillator();
+                const gain = ctx.createGain();
+                osc.connect(gain);
+                gain.connect(ctx.destination);
+
+                switch (type) {
+                    case 'flip':
+                        osc.type = 'sine';
+                        osc.frequency.setValueAtTime(800, now);
+                        osc.frequency.exponentialRampToValueAtTime(1200, now + 0.06);
+                        gain.gain.setValueAtTime(0.15, now);
+                        gain.gain.exponentialRampToValueAtTime(0.001, now + 0.12);
+                        osc.start(now);
+                        osc.stop(now + 0.12);
+                        break;
+                    case 'correct':
+                        osc.type = 'sine';
+                        osc.frequency.setValueAtTime(523, now);
+                        osc.frequency.setValueAtTime(659, now + 0.08);
+                        osc.frequency.setValueAtTime(784, now + 0.16);
+                        gain.gain.setValueAtTime(0.25, now);
+                        gain.gain.exponentialRampToValueAtTime(0.001, now + 0.3);
+                        osc.start(now);
+                        osc.stop(now + 0.3);
+                        break;
+                    case 'error':
+                        osc.type = 'sawtooth';
+                        osc.frequency.setValueAtTime(220, now);
+                        osc.frequency.linearRampToValueAtTime(160, now + 0.2);
+                        gain.gain.setValueAtTime(0.18, now);
+                        gain.gain.exponentialRampToValueAtTime(0.001, now + 0.35);
+                        osc.start(now);
+                        osc.stop(now + 0.35);
+                        break;
+                    case 'mark':
+                        osc.type = 'sine';
+                        osc.frequency.setValueAtTime(600, now);
+                        osc.frequency.setValueAtTime(700, now + 0.04);
+                        gain.gain.setValueAtTime(0.12, now);
+                        gain.gain.exponentialRampToValueAtTime(0.001, now + 0.1);
+                        osc.start(now);
+                        osc.stop(now + 0.1);
+                        break;
+                    case 'click':
+                        osc.type = 'sine';
+                        osc.frequency.setValueAtTime(1000, now);
+                        gain.gain.setValueAtTime(0.1, now);
+                        gain.gain.exponentialRampToValueAtTime(0.001, now + 0.05);
+                        osc.start(now);
+                        osc.stop(now + 0.05);
+                        break;
+                    case 'add':
+                        osc.type = 'sine';
+                        osc.frequency.setValueAtTime(660, now);
+                        osc.frequency.setValueAtTime(880, now + 0.06);
+                        gain.gain.setValueAtTime(0.2, now);
+                        gain.gain.exponentialRampToValueAtTime(0.001, now + 0.15);
+                        osc.start(now);
+                        osc.stop(now + 0.15);
+                        break;
+                    default:
+                        osc.start(now);
+                        osc.stop(now);
+                }
+            } catch (e) {
+                // 静默处理
+            }
+        }
+
+        function initAudioContextOnInteraction() {
+            const resumeCtx = () => {
+                if (audioCtx && audioCtx.state === 'suspended') {
+                    audioCtx.resume().catch(() => {});
+                }
+            };
+            ['touchstart', 'click', 'keydown'].forEach(evt => {
+                document.addEventListener(evt, resumeCtx, { once: true, passive: true });
+            });
+        }
+
+        // ============ 谷歌TTS ============
+        function isGoogleTTS() {
+            return appData.settings.selectedVoiceURI === GOOGLE_TTS_URI;
+        }
+
+        function getGoogleTtsUrl(text) {
+            const encoded = encodeURIComponent(text);
+            return `https://translate.google.com/translate_tts?ie=UTF-8&client=tw-ob&tl=ko&q=${encoded}`;
+        }
+
+        function speakWithGoogleTTS(text, rate) {
+            stopGoogleAudio();
+            const url = getGoogleTtsUrl(text);
+            const audio = new Audio(url);
+            audio.playbackRate = rate || currentSpeed;
+            currentGoogleAudio = audio;
+            audio.onended = () => {
+                if (currentGoogleAudio === audio) currentGoogleAudio = null;
+            };
+            audio.onerror = () => {
+                if (currentGoogleAudio === audio) currentGoogleAudio = null;
+                speakWithBrowserTTS(text, rate);
+            };
+            audio.play().catch(() => {
+                if (currentGoogleAudio === audio) currentGoogleAudio = null;
+                speakWithBrowserTTS(text, rate);
+            });
+        }
+
+        function stopGoogleAudio() {
+            if (currentGoogleAudio) {
+                try {
+                    currentGoogleAudio.pause();
+                    currentGoogleAudio.currentTime = 0;
+                    currentGoogleAudio.src = '';
+                } catch (e) {}
+                currentGoogleAudio = null;
+            }
+        }
+
+        function speakWithBrowserTTS(text, rate) {
+            speechSynth.cancel();
+            if (!text) return;
+            const u = new SpeechSynthesisUtterance(text);
+            u.lang = 'ko-KR';
+            u.rate = rate || currentSpeed;
+            if (koreanVoice) u.voice = koreanVoice;
+            speechSynth.speak(u);
+        }
 
         const romaMap = {
             'ㄱ': 'g', 'ㄲ': 'kk', 'ㄴ': 'n', 'ㄷ': 'd', 'ㄸ': 'tt', 'ㄹ': 'r/l', 'ㅁ': 'm', 'ㅂ': 'b', 'ㅃ': 'pp',
@@ -924,8 +1156,11 @@
             'ㅡ': 'eu', 'ㅢ': 'ui', 'ㅣ': 'i'
         };
 
-        function getRoma(korean) { let res = '';
-            for (let ch of korean) res += romaMap[ch] || ch; return res; }
+        function getRoma(korean) {
+            let res = '';
+            for (let ch of korean) res += romaMap[ch] || ch;
+            return res;
+        }
 
         function initData() {
             let raw = localStorage.getItem(STORAGE_KEY);
@@ -939,7 +1174,7 @@
                 if (!appData.settings) appData.settings = { darkMode: false, fontSize: 36, lang: 'zh',
                     reviewIntervals: { hardMin: 10, fuzzyHr: 4, easyStages: [1, 3, 7, 15, 30] },
                     spellMode: 'random', reminderEnabled: false, reminderTime: '09:00',
-                selectedVoiceURI: 'auto' };
+                    selectedVoiceURI: 'auto', soundEnabled: true };
                 if (!appData.settings.reviewIntervals) appData.settings.reviewIntervals = { hardMin: 10,
                     fuzzyHr: 4, easyStages: [1, 3, 7, 15, 30] };
                 if (!appData.settings.spellMode) appData.settings.spellMode = 'random';
@@ -947,6 +1182,7 @@
                 if (!appData.settings.reminderTime) appData.settings.reminderTime = '09:00';
                 if (appData.settings.selectedVoiceURI === undefined) appData.settings.selectedVoiceURI =
                     'auto';
+                if (appData.settings.soundEnabled === undefined) appData.settings.soundEnabled = true;
                 saveData();
                 return;
             }
@@ -972,7 +1208,7 @@
                 settings: { darkMode: false, fontSize: 36, lang: 'zh',
                     reviewIntervals: { hardMin: 10, fuzzyHr: 4, easyStages: [1, 3, 7, 15, 30] },
                     spellMode: 'random', reminderEnabled: false, reminderTime: '09:00',
-                selectedVoiceURI: 'auto' }
+                    selectedVoiceURI: 'auto', soundEnabled: true }
             };
             saveData();
         }
@@ -1005,13 +1241,17 @@
             let sel = document.getElementById('voiceSelect');
             let hint = document.getElementById('voiceHint');
             if (!sel) return;
+            sel.innerHTML = '<option value="auto">自动选择 (浏览器)</option>';
+            sel.innerHTML +=
+                `<option value="${GOOGLE_TTS_URI}" ${appData.settings.selectedVoiceURI===GOOGLE_TTS_URI?'selected':''}>🌐 Google TTS (在线·推荐)</option>`;
             if (allKoreanVoices.length === 0) {
-                sel.innerHTML = '<option value="auto">自动选择 (无韩语发音人)</option>';
+                sel.innerHTML += '<option value="auto" disabled>— 无浏览器韩语发音人 —</option>';
                 if (hint) hint.style.display = 'block';
             } else {
-                sel.innerHTML = '<option value="auto">自动选择</option>';
-                allKoreanVoices.forEach(v => { sel.innerHTML +=
-                        `<option value="${escapeHTML(v.voiceURI)}" ${appData.settings.selectedVoiceURI===v.voiceURI?'selected':''}>${escapeHTML(v.name)}</option>`; });
+                allKoreanVoices.forEach(v => {
+                    sel.innerHTML +=
+                        `<option value="${escapeHTML(v.voiceURI)}" ${appData.settings.selectedVoiceURI===v.voiceURI?'selected':''}>🔊 ${escapeHTML(v.name)}</option>`;
+                });
                 if (hint) hint.style.display = 'none';
             }
             selectVoice(appData.settings.selectedVoiceURI);
@@ -1020,23 +1260,38 @@
         function selectVoice(uri) {
             appData.settings.selectedVoiceURI = uri;
             saveData();
-            koreanVoice = (uri === 'auto' || !allKoreanVoices.length) ? (allKoreanVoices.length ? allKoreanVoices[
-                0] : null) : (allKoreanVoices.find(v => v.voiceURI === uri) || allKoreanVoices[0] || null);
+            if (uri === GOOGLE_TTS_URI) {
+                koreanVoice = allKoreanVoices.length ? allKoreanVoices[0] : null;
+            } else if (uri === 'auto' || !allKoreanVoices.length) {
+                koreanVoice = allKoreanVoices.length ? allKoreanVoices[0] : null;
+            } else {
+                koreanVoice = allKoreanVoices.find(v => v.voiceURI === uri) || allKoreanVoices[0] || null;
+            }
             let hint = document.getElementById('voiceHint');
-            if (hint) hint.style.display = allKoreanVoices.length === 0 ? 'block' : 'none';
+            if (hint) {
+                if (isGoogleTTS()) {
+                    hint.style.display = 'none';
+                } else {
+                    hint.style.display = allKoreanVoices.length === 0 ? 'block' : 'none';
+                }
+            }
         }
 
         function speak(text, rate) {
-            speechSynth.cancel(); if (!text) return;
-            let u = new SpeechSynthesisUtterance(text);
-            u.lang = 'ko-KR';
-            u.rate = rate || currentSpeed; if (koreanVoice) u.voice = koreanVoice;
-            speechSynth.speak(u);
+            if (!text) return;
+            if (isGoogleTTS()) {
+                speakWithGoogleTTS(text, rate);
+            } else {
+                speakWithBrowserTTS(text, rate);
+            }
         }
 
         function speakCurrentWord(e) { if (e) e.stopPropagation(); if (currentWord) speak(currentWord.korean); }
-
         function speakSpellWord() { if (spellWord) speak(spellWord.korean); }
+        function speakWordFromList(e, word) {
+            if (e) e.stopPropagation();
+            if (word && word.korean) speak(word.korean);
+        }
 
         function setSpeed(speed, btn) { currentSpeed = speed;
             document.querySelectorAll('.speed-btn').forEach(b => b.classList.remove('active')); if (btn) btn.classList
@@ -1100,9 +1355,12 @@
             }
         }
 
-        function flipCard() { if (!currentWord) return;
+        function flipCard() {
+            if (!currentWord) return;
             document.getElementById('flipCard').classList.toggle('flipped');
-            cardFlipped = !cardFlipped; }
+            cardFlipped = !cardFlipped;
+            playSoundEffect('flip');
+        }
 
         function markWord(type) {
             if (!currentWord) return;
@@ -1115,13 +1373,15 @@
                 appData.stats.todayNewCount++;
             }
             if (type === 'hard') { w.nextReview = now + intervals.hardMs;
-                w.wrongCount++; } else if (type === 'fuzzy') { w.nextReview = now + intervals.fuzzyMs; } else { let
-                    stages = intervals.easyStages,
+                w.wrongCount++;
+                playSoundEffect('error'); } else if (type === 'fuzzy') { w.nextReview = now + intervals.fuzzyMs;
+                playSoundEffect('mark'); } else { let stages = intervals.easyStages,
                     stage = Math.min(w.reviewCount, stages.length - 1);
                 w.nextReview = now + stages[stage] * 24 * 60 * 60 * 1000; if (stage === stages.length - 1) w.mastered =
                     true;
                 w.reviewCount++;
-                appData.stats.todayCorrect++; }
+                appData.stats.todayCorrect++;
+                playSoundEffect('correct'); }
             saveData();
             refreshReview();
             updateStats();
@@ -1246,6 +1506,7 @@
                 appData.stats.todayReviewCount++;
                 saveData();
                 updateStats();
+                playSoundEffect('correct');
                 spellAutoNextTimer = setTimeout(() => { nextSpellWord(); }, 1000);
             } else {
                 let hint = getCorrectionHint(input, spellWord.korean);
@@ -1257,6 +1518,7 @@
                 appData.stats.todayReviewCount++;
                 saveData();
                 updateStats();
+                playSoundEffect('error');
             }
         }
 
@@ -1275,6 +1537,7 @@
             document.getElementById('spellCorrection').innerHTML = '';
             document.getElementById('spellCheckBtn').disabled = false;
             document.getElementById('spellCheckBtn').style.opacity = '1';
+            playSoundEffect('click');
             nextSpellWord();
         }
 
@@ -1320,7 +1583,6 @@
 
         function closeBookList(e) { if (e.target === document.getElementById('bookListPopup')) document.getElementById(
                 'bookListPopup').style.display = 'none'; }
-
         function closeBookListDirect() { document.getElementById('bookListPopup').style.display = 'none'; }
 
         function switchBook(id) { appData.activeBookId = id;
@@ -1365,6 +1627,7 @@
             if (currentActiveTab === 'review') refreshReview();
             else if (currentActiveTab === 'spell') startSpell(); }
 
+        // 修改添加逻辑：只输入韩语或只输入释义都可添加
         function addWord() {
             let kr = document.getElementById('inputKorean').value.trim(),
                 zh = document.getElementById('inputChinese').value.trim(),
@@ -1372,15 +1635,35 @@
                 ex = document.getElementById('inputExample').value.trim(),
                 tagsStr = document.getElementById('inputTags').value.trim(),
                 tags = tagsStr ? tagsStr.split(/[,，]/).map(s => s.trim()).filter(s => s) : [];
-            if (!kr || !zh) return;
-            let book = getActiveBook(); if (book.words.some(w => w.korean === kr)) { alert('该单词已存在'); return; }
-            book.words.push({ id: Date.now(), korean: kr, chinese: zh, pos, example: ex, nextReview: Date.now(),
-                reviewCount: 0, mastered: false, wrongCount: 0, roma: getRoma(kr), tags });
+            if (!kr && !zh) {
+                alert('请至少填写韩语单词或中文释义之一');
+                return;
+            }
+            let book = getActiveBook();
+            // 若韩语非空，检查是否已存在相同韩语单词
+            if (kr && book.words.some(w => w.korean === kr)) {
+                alert('该韩语单词已存在');
+                return;
+            }
+            book.words.push({
+                id: Date.now(),
+                korean: kr,
+                chinese: zh,
+                pos,
+                example: ex,
+                nextReview: Date.now(),
+                reviewCount: 0,
+                mastered: false,
+                wrongCount: 0,
+                roma: kr ? getRoma(kr) : '',
+                tags
+            });
             saveData();
             renderWordList();
             ['inputKorean', 'inputChinese', 'inputPOS', 'inputExample', 'inputTags'].forEach(id => document
                 .getElementById(id).value = '');
             updateStats();
+            playSoundEffect('add');
         }
 
         function batchAddWords() {
@@ -1388,36 +1671,69 @@
             let lines = text.split('\n').filter(l => l.trim()),
                 book = getActiveBook(),
                 added = 0;
-            lines.forEach(line => { let parts = line.split(/[,\t]/); if (parts.length >= 2) { let kr = parts[0].trim(),
-                        zh = parts[1].trim(); if (!kr || !zh || book.words.some(w => w.korean === kr))
-                    return;
-                book.words.push({ id: Date.now() + Math.random(), korean: kr, chinese: zh, pos: parts[2]?.trim() ||
-                        '', example: parts[3]?.trim() || '', nextReview: Date.now(), reviewCount: 0,
-                    mastered: false, wrongCount: 0, roma: getRoma(kr), tags: [] });
-                added++; } });
+            lines.forEach(line => {
+                let parts = line.split(/[,\t]/);
+                let kr = (parts[0] || '').trim();
+                let zh = (parts[1] || '').trim();
+                if (!kr && !zh) return; // 两个都空则跳过
+                // 如果韩语非空且已存在则跳过
+                if (kr && book.words.some(w => w.korean === kr)) return;
+                book.words.push({
+                    id: Date.now() + Math.random(),
+                    korean: kr,
+                    chinese: zh,
+                    pos: (parts[2] || '').trim(),
+                    example: (parts[3] || '').trim(),
+                    nextReview: Date.now(),
+                    reviewCount: 0,
+                    mastered: false,
+                    wrongCount: 0,
+                    roma: kr ? getRoma(kr) : '',
+                    tags: []
+                });
+                added++;
+            });
             saveData();
             renderWordList();
             document.getElementById('batchInput').value = '';
             updateStats();
+            playSoundEffect('add');
             alert(`批量导入完成，新增 ${added} 个单词`);
         }
 
         function handleImport(event) {
             let file = event.target.files[0]; if (!file) return;
             let reader = new FileReader();
-            reader.onload = function(e) { let lines = e.target.result.split('\n').filter(l => l.trim()),
+            reader.onload = function(e) {
+                let lines = e.target.result.split('\n').filter(l => l.trim()),
                     book = getActiveBook(),
                     importedCount = 0;
-                lines.forEach(line => { let parts = line.split(/[,\t]/); if (parts.length >= 2) { let word = { id: Date
-                            .now() + Math.random(), korean: parts[0].trim(), chinese: parts[1].trim(),
-                            pos: parts[2]?.trim() || '', example: parts[3]?.trim() || '', nextReview: Date.now(),
-                            reviewCount: 0, mastered: false, wrongCount: 0, roma: getRoma(parts[0].trim()),
-                            tags: [] }; if (!book.words.find(w => w.korean === word.korean)) { book.words.push(
-                            word);
-                        importedCount++; } } });
+                lines.forEach(line => {
+                    let parts = line.split(/[,\t]/);
+                    let kr = (parts[0] || '').trim();
+                    let zh = (parts[1] || '').trim();
+                    if (!kr && !zh) return;
+                    if (kr && book.words.find(w => w.korean === kr)) return;
+                    book.words.push({
+                        id: Date.now() + Math.random(),
+                        korean: kr,
+                        chinese: zh,
+                        pos: (parts[2] || '').trim(),
+                        example: (parts[3] || '').trim(),
+                        nextReview: Date.now(),
+                        reviewCount: 0,
+                        mastered: false,
+                        wrongCount: 0,
+                        roma: kr ? getRoma(kr) : '',
+                        tags: []
+                    });
+                    importedCount++;
+                });
                 saveData();
                 renderWordList();
-                alert(`导入完成，新增 ${importedCount} 个单词`); };
+                playSoundEffect('add');
+                alert(`导入完成，新增 ${importedCount} 个单词`);
+            };
             reader.readAsText(file);
             event.target.value = '';
         }
@@ -1438,7 +1754,7 @@
         // ============ 全局备份与恢复 ============
         function exportAllData() {
             let exportObj = {
-                version: 'v6',
+                version: 'v7',
                 exportedAt: new Date().toISOString(),
                 data: JSON.parse(JSON.stringify(appData))
             };
@@ -1463,7 +1779,7 @@
                         alert('❌ 无效的备份文件格式');
                         return;
                     }
-                    if (!confirm('⚠️ 导入将覆盖当前所有数据（单词本、设置、学习记录），确定继续吗？')) return;
+                    if (!confirm('⚠️ 导入将覆盖当前所有数据，确定继续吗？')) return;
                     appData = importedData;
                     appData.books.forEach(b => b.words.forEach(w => { if (!w.roma) w.roma = getRoma(w.korean); if (!w
                             .tags) w.tags = []; }));
@@ -1472,6 +1788,8 @@
                     if (!appData.settings.reviewIntervals) appData.settings.reviewIntervals = { hardMin: 10,
                         fuzzyHr: 4, easyStages: [1, 3, 7, 15, 30] };
                     if (!appData.settings.spellMode) appData.settings.spellMode = 'random';
+                    if (appData.settings.selectedVoiceURI === undefined) appData.settings.selectedVoiceURI = 'auto';
+                    if (appData.settings.soundEnabled === undefined) appData.settings.soundEnabled = true;
                     saveData();
                     applySettings();
                     updateBookDisplay();
@@ -1490,11 +1808,27 @@
         function renderWordList() {
             let words = appData.showMastered ? getActiveBook().words.filter(w => w.mastered) : getActiveBook().words
                 .filter(w => !w.mastered);
-            document.getElementById('wordListContainer').innerHTML = words.map(w => `
+            document.getElementById('wordListContainer').innerHTML = words.map(w => {
+                let posBadgeHtml = w.pos ? `<span class="pos-badge-sm">${escapeHTML(w.pos)}</span>` : '';
+                let tagsHtml = (w.tags || []).map(t => `<span class="tag">${escapeHTML(t)}</span>`).join('');
+                let koreanDisplay = w.korean || '<span class="placeholder-text">[未填写韩语]</span>';
+                let chineseDisplay = w.chinese || '<span class="placeholder-text">[未填写释义]</span>';
+                return `
                 <div class="word-row-item" draggable="true" ondragstart="dragWord(event,'${escapeHTML(String(w.id))}')" onclick="showWordDetail('${escapeHTML(String(w.id))}')">
-                    <div><b>${escapeHTML(w.korean)}</b> - ${escapeHTML(w.chinese)}<span style="color:#b5a0b5;font-size:12px;">[${escapeHTML(w.roma||'')}]</span>${(w.tags||[]).map(t=>`<span class="tag">${escapeHTML(t)}</span>`).join('')}</div>
-                    <button onclick="event.stopPropagation();deleteWord('${escapeHTML(String(w.id))}')" style="background:none;border:none;cursor:pointer;font-size:16px;">🗑️</button>
-                </div>`).join('') || '<div class="empty-message">📭 暂无单词</div>';
+                    <div class="word-row-item-left">
+                        <b>${koreanDisplay}</b>
+                        <span>-</span>
+                        <span>${chineseDisplay}</span>
+                        ${posBadgeHtml}
+                        <span class="word-info-line">[${escapeHTML(w.roma||'')}]</span>
+                        ${tagsHtml}
+                    </div>
+                    <div class="word-row-item-right">
+                        <button class="headphone-btn-sm" onclick="speakWordFromList(event, {korean:'${escapeHTML(w.korean).replace(/'/g, "\\'")}'})" title="朗读">🔊</button>
+                        <button onclick="event.stopPropagation();deleteWord('${escapeHTML(String(w.id))}')" style="background:none;border:none;cursor:pointer;font-size:16px;padding:2px 4px;">🗑️</button>
+                    </div>
+                </div>`;
+            }).join('') || '<div class="empty-message">📭 暂无单词</div>';
         }
 
         function deleteWord(id) { if (!confirm('确定删除这个单词吗？此操作不可恢复。')) return;
@@ -1536,7 +1870,8 @@
             document.getElementById('editExample').value = w.example || '';
             document.getElementById('editRoma').value = w.roma || '';
             document.getElementById('editTags').value = (w.tags || []).join(',');
-            document.getElementById('wordDetailPopup').style.display = 'flex'; }
+            document.getElementById('wordDetailPopup').style.display = 'flex';
+            playSoundEffect('click'); }
 
         function saveWordEdit() { if (!editingWordId) return;
             let w = getWords().find(w => String(w.id) === String(editingWordId)); if (!w) return;
@@ -1544,7 +1879,7 @@
             w.chinese = document.getElementById('editChinese').value;
             w.pos = document.getElementById('editPOS').value;
             w.example = document.getElementById('editExample').value;
-            w.roma = document.getElementById('editRoma').value || getRoma(w.korean);
+            w.roma = document.getElementById('editRoma').value || (w.korean ? getRoma(w.korean) : '');
             w.tags = document.getElementById('editTags').value.split(/[,，]/).map(s => s.trim()).filter(s => s);
             saveData();
             renderWordList();
@@ -1554,7 +1889,6 @@
 
         function closeWordDetail(e) { if (e.target === document.getElementById('wordDetailPopup')) document.getElementById(
                 'wordDetailPopup').style.display = 'none'; }
-
         function closeWordDetailDirect() { document.getElementById('wordDetailPopup').style.display = 'none';
             editingWordId = null; }
 
@@ -1563,10 +1897,8 @@
 
         function openSearch() { document.getElementById('searchPopup').style.display = 'flex';
             document.getElementById('searchInput').focus(); }
-
         function closeSearch(e) { if (e.target === document.getElementById('searchPopup')) document.getElementById(
                 'searchPopup').style.display = 'none'; }
-
         function closeSearchDirect() { document.getElementById('searchPopup').style.display = 'none'; }
 
         function doSearch() { let q = document.getElementById('searchInput').value.trim().toLowerCase(),
@@ -1613,6 +1945,16 @@
             if (fontSizeInput) fontSizeInput.value = appData.settings.fontSize;
             if (spellModeToggle) spellModeToggle.innerText = appData.settings.spellMode === 'random' ?
                 '🔀 随机拼写' : '📋 顺序拼写';
+
+            // 更新音效开关UI
+            let soundToggleBtn = document.getElementById('soundToggleBtn');
+            let soundStatus = document.getElementById('soundStatus');
+            if (soundToggleBtn) {
+                soundToggleBtn.innerText = appData.settings.soundEnabled ? '🔊 开启' : '🔇 关闭';
+            }
+            if (soundStatus) {
+                soundStatus.innerText = appData.settings.soundEnabled ? '音效已开启' : '音效已关闭';
+            }
         }
 
         function saveReviewSettings() {
@@ -1636,11 +1978,16 @@
 
         function checkIn() {
             let today = new Date().toDateString();
-            if (!appData.stats.checkIns.includes(today)) { appData.stats.checkIns.push(today);
+            if (!appData.stats.checkIns.includes(today)) {
+                appData.stats.checkIns.push(today);
                 appData.stats.streak = calcStreak(appData.stats.checkIns);
                 saveData();
                 updateStats();
-                alert('✅ 打卡成功！'); } else alert('今天已打卡~');
+                playSoundEffect('correct');
+                alert('✅ 打卡成功！');
+            } else {
+                alert('今天已打卡~');
+            }
         }
 
         function calcStreak(dates) {
@@ -1751,6 +2098,16 @@
                         tag: 'korean-reminder' }); } }, 30000);
         }
 
+        // ============ 音效开关控制 ============
+        function toggleSound() {
+            appData.settings.soundEnabled = !appData.settings.soundEnabled;
+            saveData();
+            updateSettingsDisplay();
+            if (appData.settings.soundEnabled) {
+                playSoundEffect('click'); // 开启时播放一个提示音
+            }
+        }
+
         // ============ 设置应用 ============
         function applySettings() { if (appData.settings.darkMode) document.body.classList.add('dark');
             changeFontSize(appData.settings.fontSize);
@@ -1804,13 +2161,19 @@
         document.querySelectorAll('.nav-item').forEach(btn => btn.addEventListener('click', () => switchTab(btn.dataset
             .tab)));
 
-        // ============ 窗口尺寸变化时更新滑动阈值 ============
         window.addEventListener('resize', () => {
             updateSwipeThreshold();
         });
 
-        // ============ 初始化 ============
-        async function init() { initData();
+        document.addEventListener('visibilitychange', () => {
+            if (document.hidden) {
+                stopGoogleAudio();
+                speechSynth.cancel();
+            }
+        });
+
+        async function init() {
+            initData();
             await loadVoices();
             selectVoice(appData.settings.selectedVoiceURI);
             applySettings();
@@ -1818,7 +2181,9 @@
             updateSwipeThreshold();
             initSwipe();
             initKeyboard();
-            switchTab('review'); }
+            initAudioContextOnInteraction();
+            switchTab('review');
+        }
         init();
     </script>
 </body>
