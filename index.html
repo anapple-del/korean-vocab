@@ -233,12 +233,24 @@
         .headphone-btn {
             background: none;
             border: none;
-            font-size: 24px;
             cursor: pointer;
             color: #c4aabc;
-            padding: 4px 8px;
+            padding: 6px 8px;
             border-radius: 50%;
             transition: 0.2s;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+        }
+        .headphone-btn svg {
+            width: 22px;
+            height: 22px;
+            stroke: currentColor;
+            fill: none;
+            stroke-width: 2;
+            stroke-linecap: round;
+            stroke-linejoin: round;
         }
         .headphone-btn:active {
             background: #fce4ec;
@@ -247,15 +259,26 @@
         .headphone-btn-sm {
             background: none;
             border: none;
-            font-size: 17px;
             cursor: pointer;
             color: #c4aabc;
-            padding: 2px 6px;
+            padding: 3px 6px;
             border-radius: 50%;
             transition: 0.2s;
             flex-shrink: 0;
             line-height: 1;
             vertical-align: middle;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .headphone-btn-sm svg {
+            width: 16px;
+            height: 16px;
+            stroke: currentColor;
+            fill: none;
+            stroke-width: 2;
+            stroke-linecap: round;
+            stroke-linejoin: round;
         }
         .headphone-btn-sm:active {
             background: #fce4ec;
@@ -876,6 +899,98 @@
         body.dark .translate-status-text.error {
             color: #f08090;
         }
+        .detail-korean-row {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin-bottom: 8px;
+        }
+        .detail-korean-row h3 {
+            margin: 0;
+            flex: 1;
+            min-width: 0;
+            word-break: break-all;
+        }
+        .btn-translate-inline {
+            background: none;
+            border: 2px solid #d0c8e0;
+            cursor: pointer;
+            color: #6b5b8a;
+            padding: 5px 8px;
+            border-radius: 10px;
+            font-size: 11px;
+            font-weight: 600;
+            transition: 0.2s;
+            white-space: nowrap;
+            flex-shrink: 0;
+            display: inline-flex;
+            align-items: center;
+            gap: 3px;
+        }
+        .btn-translate-inline:active {
+            transform: scale(0.94);
+            background: #e8e0f8;
+        }
+        .btn-translate-inline.loading {
+            opacity: 0.6;
+            pointer-events: none;
+        }
+        body.dark .btn-translate-inline {
+            border-color: #5a4a6a;
+            color: #c0b0e0;
+        }
+        .detail-translate-status {
+            font-size: 10px;
+            color: #b5a0b5;
+            min-height: 16px;
+            margin-bottom: 6px;
+            transition: color 0.3s;
+        }
+        .detail-translate-status.success {
+            color: #5f9b7a;
+        }
+        .detail-translate-status.error {
+            color: #c66b7b;
+        }
+        body.dark .detail-translate-status {
+            color: #8a7a9a;
+        }
+        body.dark .detail-translate-status.success {
+            color: #7dce82;
+        }
+        body.dark .detail-translate-status.error {
+            color: #f08090;
+        }
+        .batch-translate-row {
+            display: flex;
+            gap: 6px;
+            flex-wrap: wrap;
+            align-items: center;
+            margin-top: 4px;
+            margin-bottom: 6px;
+        }
+        .batch-translate-status {
+            font-size: 10px;
+            color: #b5a0b5;
+            min-height: 16px;
+            margin-top: 2px;
+            transition: color 0.3s;
+        }
+        .batch-translate-status.success {
+            color: #5f9b7a;
+        }
+        .batch-translate-status.error {
+            color: #c66b7b;
+        }
+        body.dark .batch-translate-status {
+            color: #8a7a9a;
+        }
+        body.dark .batch-translate-status.success {
+            color: #7dce82;
+        }
+        body.dark .batch-translate-status.error {
+            color: #f08090;
+        }
     </style>
 </head>
 <body id="mainBody">
@@ -896,6 +1011,26 @@
             <g id="icon-upload"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><polyline points="17 8 12 3 7 8" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><line x1="12" y1="3" x2="12" y2="15" stroke-width="2" stroke-linecap="round"/></g>
             <g id="icon-speaker"><path d="M11 5L6 9H2v6h4l5 4V5z" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><path d="M15.54 8.46a5 5 0 010 7.07" fill="none" stroke-width="2" stroke-linecap="round"/><path d="M19.07 4.93a10 10 0 010 14.14" fill="none" stroke-width="2" stroke-linecap="round"/></g>
             <g id="icon-refresh"><polyline points="23 4 23 10 17 10" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></g>
+            <!-- 简约现代扬声器图标 - 用于朗读单词 (替换🎧) -->
+            <g id="icon-speaker-modern">
+                <rect x="3" y="7.5" width="6" height="9" rx="2" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                <path d="M9 9.5L15 5.5v13L9 14.5" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                <path d="M18 9a3 3 0 0 1 0 6" fill="none" stroke-width="2" stroke-linecap="round"/>
+            </g>
+            <!-- 简约扬声器带双声波 - 用于朗读例句 (替换🔊) -->
+            <g id="icon-speaker-wave">
+                <rect x="3" y="7.5" width="6" height="9" rx="2" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                <path d="M9 9.5L15 5.5v13L9 14.5" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                <path d="M18 8a4 4 0 0 1 0 8" fill="none" stroke-width="2" stroke-linecap="round"/>
+                <path d="M21 6a7 7 0 0 1 0 12" fill="none" stroke-width="2" stroke-linecap="round"/>
+            </g>
+            <!-- 翻译图标 -->
+            <g id="icon-translate">
+                <circle cx="12" cy="12" r="10" fill="none" stroke-width="2"/>
+                <ellipse cx="12" cy="12" rx="5" ry="10" fill="none" stroke-width="2"/>
+                <line x1="2" y1="9" x2="22" y2="9" stroke-width="2" stroke-linecap="round"/>
+                <line x1="2" y1="15" x2="22" y2="15" stroke-width="2" stroke-linecap="round"/>
+            </g>
         </defs>
     </svg>
 
@@ -913,14 +1048,14 @@
             <div class="progress-info" id="reviewProgress"></div>
             <div class="flip-card" id="flipCard" onclick="flipCard()">
                 <div class="flip-card-inner">
-                    <div class="card-front"><div class="word-row"><span class="word-korean" id="frontWord"></span><button class="headphone-btn" onclick="speakCurrentWord(event)">🎧</button></div></div>
+                    <div class="card-front"><div class="word-row"><span class="word-korean" id="frontWord"></span><button class="headphone-btn" onclick="speakCurrentWord(event)" title="朗读单词"><svg viewBox="0 0 24 24"><use href="#icon-speaker-modern"/></svg></button></div></div>
                     <div class="card-back card-face">
                         <span class="meaning-chinese" id="backMeaning"></span>
                         <span class="pos-badge" id="backPOS"></span>
                         <span class="roma-text" id="backRoma"></span>
                         <div class="example-row">
                             <span class="example-text" id="backExample"></span>
-                            <button class="headphone-btn-sm" id="btnSpeakExample" onclick="speakExample(event)" style="display:none;" title="朗读例句">🔊</button>
+                            <button class="headphone-btn-sm" id="btnSpeakExample" onclick="speakExample(event)" style="display:none;" title="朗读例句"><svg viewBox="0 0 24 24"><use href="#icon-speaker-wave"/></svg></button>
                         </div>
                         <div class="conjugation-box" id="backConjugation" style="display:none;"></div>
                     </div>
@@ -957,7 +1092,7 @@
             </div>
             <div class="card-face" id="spellSubPanel">
                 <span class="meaning-chinese" id="spellChinese" style="font-size:28px;"></span>
-                <button class="headphone-btn" onclick="speakSpellWord()" style="margin:8px 0;font-size:28px;">🎧</button>
+                <button class="headphone-btn" onclick="speakSpellWord()" style="margin:8px 0;" title="朗读发音"><svg viewBox="0 0 24 24" style="width:26px;height:26px;"><use href="#icon-speaker-modern"/></svg></button>
                 <input class="input-field" id="spellInput" placeholder="输入韩语拼写..." autocomplete="off" autocapitalize="off" style="text-align:center;font-size:18px;">
                 <div style="display:flex;flex-direction:column;gap:8px;width:100%;">
                     <button class="btn-primary" onclick="checkSpell()" id="spellCheckBtn">✅ 检查</button>
@@ -977,19 +1112,23 @@
                 <button class="btn-primary" onclick="exportBook()" style="margin-top:6px;">📤 导出CSV</button>
                 <details style="margin:6px 0;text-align:left;">
                     <summary style="cursor:pointer;font-weight:600;color:#5d4b5a;padding:4px 0;">📝 批量添加单词</summary>
-                    <textarea class="input-field" id="batchInput" placeholder="每行一个：韩语,释义&#10;例如：&#10;사랑,爱情&#10;공부,学习" style="min-height:90px;font-size:13px;"></textarea>
-                    <button class="btn-primary" onclick="batchAddWords()">➕ 批量导入</button>
+                    <textarea class="input-field" id="batchInput" placeholder="每行一个：韩语,释义&#10;例如：&#10;사랑,爱情&#10;공부,学习&#10;也可以只写韩语，让翻译功能自动补全释义" style="min-height:90px;font-size:13px;"></textarea>
+                    <div class="batch-translate-row">
+                        <button class="btn-sm-translate" onclick="batchTranslateWords()" id="btnBatchTranslate" title="批量翻译韩语（仅翻译未填写释义的行）"><svg width="14" height="14" viewBox="0 0 24 24" style="stroke:currentColor;fill:none;"><use href="#icon-translate"/></svg> 批量翻译</button>
+                        <button class="btn-primary" onclick="batchAddWords()" style="width:auto;flex-shrink:0;flex:1;">➕ 批量导入</button>
+                    </div>
+                    <div class="batch-translate-status" id="batchTranslateStatus"></div>
                 </details>
                 <div style="display:flex;gap:6px;align-items:flex-start;flex-wrap:wrap;">
                     <input class="input-field" id="inputKorean" placeholder="韩语单词 (输入后自动翻译)" style="flex:1;min-width:140px;margin-bottom:4px;">
-                    <button class="btn-sm-translate" onclick="triggerAutoTranslate()" id="btnTranslate" title="自动翻译韩语">🌐 翻译</button>
+                    <button class="btn-sm-translate" onclick="triggerAutoTranslate()" id="btnTranslate" title="自动翻译韩语"><svg width="13" height="13" viewBox="0 0 24 24" style="stroke:currentColor;fill:none;"><use href="#icon-translate"/></svg> 翻译</button>
                 </div>
                 <div class="translate-status-text" id="translateStatus"></div>
                 <input class="input-field" id="inputChinese" placeholder="中文释义 (可手动修改)">
                 <input class="input-field" id="inputPOS" placeholder="词性 (如：名词、动词、形容词，可手动修改)">
                 <input class="input-field" id="inputExample" placeholder="例句">
                 <div class="filter-row"><input class="input-field" id="inputTags" placeholder="标签" style="flex:1;"><button class="btn-primary" onclick="addWord()" style="width:auto;flex-shrink:0;">➕ 添加</button></div>
-                <p style="font-size:11px;color:#b5a0b5;margin-top:4px;">💡 输入韩语后点击「🌐翻译」自动填写释义和词性，也可手动修改</p>
+                <p style="font-size:11px;color:#b5a0b5;margin-top:4px;">💡 输入韩语后点击「翻译」自动填写释义和词性，也可手动修改</p>
             </div>
             <div class="filter-row"><button class="filter-btn" onclick="toggleMasteredView()">📦 熟词箱</button><button class="filter-btn" onclick="openSearch()">🔍 全局搜索</button></div>
             <div class="word-list" id="wordListContainer"></div>
@@ -1059,7 +1198,13 @@
         </div>
 
         <!-- 弹窗：单词编辑 -->
-        <div class="modal" id="wordDetailPopup" onclick="closeWordDetail(event)"><div class="modal-content" onclick="event.stopPropagation()"><h3 id="detailKorean" contenteditable="true"></h3><input class="input-field" id="editChinese" placeholder="释义"><input class="input-field" id="editPOS" placeholder="词性"><div style="display:flex;gap:4px;align-items:center;"><input class="input-field" id="editExample" placeholder="例句" style="flex:1;margin-bottom:0;"><button class="headphone-btn-sm" onclick="speakEditExample(event)" title="朗读例句" style="font-size:20px;">🔊</button></div><input class="input-field" id="editRoma" placeholder="罗马音"><input class="input-field" id="editTags" placeholder="标签 (逗号分隔)"><button class="btn-primary" onclick="saveWordEdit()">💾 保存</button><button class="btn-primary" style="background:#ccc;" onclick="closeWordDetailDirect()">关闭</button></div></div>
+        <div class="modal" id="wordDetailPopup" onclick="closeWordDetail(event)"><div class="modal-content" onclick="event.stopPropagation()">
+            <div class="detail-korean-row">
+                <h3 id="detailKorean" contenteditable="true"></h3>
+                <button class="btn-translate-inline" onclick="translateDetailKorean()" id="btnDetailTranslate" title="翻译韩语并自动填写释义和词性"><svg width="13" height="13" viewBox="0 0 24 24" style="stroke:currentColor;fill:none;"><use href="#icon-translate"/></svg> 翻译</button>
+            </div>
+            <div class="detail-translate-status" id="detailTranslateStatus"></div>
+            <input class="input-field" id="editChinese" placeholder="释义"><input class="input-field" id="editPOS" placeholder="词性"><div style="display:flex;gap:4px;align-items:center;"><input class="input-field" id="editExample" placeholder="例句" style="flex:1;margin-bottom:0;"><button class="headphone-btn-sm" onclick="speakEditExample(event)" title="朗读例句"><svg viewBox="0 0 24 24"><use href="#icon-speaker-wave"/></svg></button></div><input class="input-field" id="editRoma" placeholder="罗马音"><input class="input-field" id="editTags" placeholder="标签 (逗号分隔)"><button class="btn-primary" onclick="saveWordEdit()">💾 保存</button><button class="btn-primary" style="background:#ccc;" onclick="closeWordDetailDirect()">关闭</button></div></div>
 
         <!-- 弹窗：单词本列表 -->
         <div class="modal" id="bookListPopup" onclick="closeBookList(event)"><div class="modal-content" onclick="event.stopPropagation()"><h3>📒 单词本</h3><div id="bookListContainer"></div><input class="input-field" id="newBookName" placeholder="新建单词本"><button class="btn-primary" onclick="createNewBook()">创建</button><button class="btn-primary" style="background:#ccc;margin-top:6px;" onclick="closeBookListDirect()">关闭</button></div></div>
@@ -1101,6 +1246,8 @@
         let spellAutoNextTimer = null;
         let currentGoogleAudio = null;
         let translateRequestId = 0;
+        let detailTranslateRequestId = 0;
+        let batchTranslateRequestId = 0;
 
         // ============ 音效系统 ============
         let audioCtx = null;
@@ -1386,7 +1533,6 @@
         }
 
         async function translateKoreanToChinese(text) {
-            // 使用 MyMemory 免费翻译API（支持CORS）
             const url = `https://api.mymemory.translated.net/get?q=${encodeURIComponent(text)}&langpair=ko|zh-CN`;
             try {
                 const controller = new AbortController();
@@ -1396,14 +1542,12 @@
                 const data = await response.json();
                 if (data.responseStatus === 200 && data.responseData && data.responseData.translatedText) {
                     let translated = data.responseData.translatedText.trim();
-                    // 清理翻译结果中的多余空格和特殊字符
                     translated = translated.replace(/\s+/g, ' ').trim();
                     return translated;
                 }
             } catch (e) {
                 console.log('MyMemory翻译失败，尝试备用方案:', e.message);
             }
-            // 备用：尝试Google Translate公开接口
             try {
                 const gUrl =
                     `https://translate.googleapis.com/translate_a/single?client=gtx&sl=ko&tl=zh-CN&dt=t&q=${encodeURIComponent(text)}`;
@@ -1435,7 +1579,6 @@
                 statusEl.className = 'translate-status-text error';
                 return;
             }
-            // 检查是否包含韩文字符
             const hasKorean = /[\uAC00-\uD7AF\u1100-\u11FF\u3130-\u318F]/.test(kr);
             if (!hasKorean) {
                 statusEl.textContent = '⚠️ 未检测到韩文字符';
@@ -1447,23 +1590,20 @@
             statusEl.className = 'translate-status-text';
             if (btnEl) {
                 btnEl.classList.add('loading');
-                btnEl.textContent = '⏳';
+                btnEl.innerHTML = '<svg width="13" height="13" viewBox="0 0 24 24" style="stroke:currentColor;fill:none;"><use href="#icon-translate"/></svg> ⏳';
             }
             const translated = await translateKoreanToChinese(kr);
             if (currentRequestId !== translateRequestId) {
-                // 有更新的请求，忽略此结果
                 return;
             }
             if (btnEl) {
                 btnEl.classList.remove('loading');
-                btnEl.textContent = '🌐 翻译';
+                btnEl.innerHTML = '<svg width="13" height="13" viewBox="0 0 24 24" style="stroke:currentColor;fill:none;"><use href="#icon-translate"/></svg> 翻译';
             }
             if (translated) {
-                // 自动填充中文释义
                 if (!zhInput.value.trim() || confirm('中文释义已有内容，是否覆盖为翻译结果？\n\n翻译：' + translated)) {
                     zhInput.value = translated;
                 }
-                // 自动推测词性
                 const guessedPOS = guessPOS(kr);
                 if (guessedPOS && (!posInput.value.trim() || confirm('词性已有内容，是否覆盖为推测结果？\n\n推测词性：' +
                         guessedPOS))) {
@@ -1473,7 +1613,6 @@
                 statusEl.className = 'translate-status-text success';
                 playSoundEffect('add');
             } else {
-                // 翻译失败，但仍尝试推测词性
                 const guessedPOS = guessPOS(kr);
                 if (guessedPOS && !posInput.value.trim()) {
                     posInput.value = guessedPOS;
@@ -1483,13 +1622,185 @@
                 }
                 statusEl.className = 'translate-status-text error';
             }
-            // 3秒后清除状态
             setTimeout(() => {
                 if (statusEl.className.includes('success') || statusEl.className.includes('error')) {
                     statusEl.textContent = '';
                     statusEl.className = 'translate-status-text';
                 }
             }, 4000);
+        }
+
+        // ============ 编辑弹窗翻译 ============
+        async function translateDetailKorean() {
+            const detailKoreanEl = document.getElementById('detailKorean');
+            const editChineseEl = document.getElementById('editChinese');
+            const editPOSEl = document.getElementById('editPOS');
+            const statusEl = document.getElementById('detailTranslateStatus');
+            const btnEl = document.getElementById('btnDetailTranslate');
+            const kr = (detailKoreanEl.innerText || detailKoreanEl.textContent || '').trim();
+            if (!kr) {
+                statusEl.textContent = '⚠️ 请先输入韩语单词';
+                statusEl.className = 'detail-translate-status error';
+                return;
+            }
+            const hasKorean = /[\uAC00-\uD7AF\u1100-\u11FF\u3130-\u318F]/.test(kr);
+            if (!hasKorean) {
+                statusEl.textContent = '⚠️ 未检测到韩文字符';
+                statusEl.className = 'detail-translate-status error';
+                return;
+            }
+            const currentRequestId = ++detailTranslateRequestId;
+            statusEl.textContent = '⏳ 正在翻译...';
+            statusEl.className = 'detail-translate-status';
+            if (btnEl) {
+                btnEl.classList.add('loading');
+                btnEl.textContent = '⏳';
+            }
+            const translated = await translateKoreanToChinese(kr);
+            if (currentRequestId !== detailTranslateRequestId) {
+                return;
+            }
+            if (btnEl) {
+                btnEl.classList.remove('loading');
+                btnEl.innerHTML = '<svg width="13" height="13" viewBox="0 0 24 24" style="stroke:currentColor;fill:none;"><use href="#icon-translate"/></svg> 翻译';
+            }
+            if (translated) {
+                if (!editChineseEl.value.trim() || confirm('释义已有内容，是否覆盖为翻译结果？\n\n翻译：' + translated)) {
+                    editChineseEl.value = translated;
+                }
+                const guessedPOS = guessPOS(kr);
+                if (guessedPOS && (!editPOSEl.value.trim() || confirm('词性已有内容，是否覆盖为推测结果？\n\n推测词性：' +
+                        guessedPOS))) {
+                    editPOSEl.value = guessedPOS;
+                }
+                statusEl.textContent = '✅ 翻译完成：' + translated;
+                statusEl.className = 'detail-translate-status success';
+                playSoundEffect('add');
+            } else {
+                const guessedPOS = guessPOS(kr);
+                if (guessedPOS && !editPOSEl.value.trim()) {
+                    editPOSEl.value = guessedPOS;
+                    statusEl.textContent = '⚠️ 翻译失败，已自动推测词性：' + guessedPOS;
+                } else {
+                    statusEl.textContent = '❌ 翻译失败，请检查网络或手动输入';
+                }
+                statusEl.className = 'detail-translate-status error';
+            }
+            setTimeout(() => {
+                if (statusEl.className.includes('success') || statusEl.className.includes('error')) {
+                    statusEl.textContent = '';
+                    statusEl.className = 'detail-translate-status';
+                }
+            }, 4000);
+        }
+
+        // ============ 批量翻译功能 ============
+        async function batchTranslateWords() {
+            const textarea = document.getElementById('batchInput');
+            const statusEl = document.getElementById('batchTranslateStatus');
+            const btnEl = document.getElementById('btnBatchTranslate');
+            const text = textarea.value.trim();
+            if (!text) {
+                statusEl.textContent = '⚠️ 请先输入待翻译的单词';
+                statusEl.className = 'batch-translate-status error';
+                return;
+            }
+            const lines = text.split('\n');
+            const parsedLines = lines.map(line => {
+                const trimmed = line.trim();
+                if (!trimmed) return { original: line, kr: '', zh: '', rest: '', needsTranslation: false };
+                const parts = trimmed.split(/[,\t]/);
+                const kr = (parts[0] || '').trim();
+                const zh = (parts[1] || '').trim();
+                const rest = parts.slice(2).join(',').trim();
+                const hasKorean = /[\uAC00-\uD7AF\u1100-\u11FF\u3130-\u318F]/.test(kr);
+                const needsTranslation = kr && !zh && hasKorean;
+                return { original: line, kr, zh, rest, needsTranslation, parts };
+            });
+
+            const toTranslate = parsedLines.filter(l => l.needsTranslation);
+            if (toTranslate.length === 0) {
+                statusEl.textContent = 'ℹ️ 所有行都已有释义或没有韩语，无需翻译';
+                statusEl.className = 'batch-translate-status';
+                return;
+            }
+
+            const currentRequestId = ++batchTranslateRequestId;
+            statusEl.textContent = `⏳ 正在翻译 ${toTranslate.length} 个单词...`;
+            statusEl.className = 'batch-translate-status';
+            if (btnEl) {
+                btnEl.classList.add('loading');
+                btnEl.textContent = '⏳ 翻译中...';
+            }
+
+            let translatedCount = 0;
+            let failedCount = 0;
+
+            for (let i = 0; i < toTranslate.length; i++) {
+                if (batchTranslateRequestId !== currentRequestId) {
+                    if (btnEl) {
+                        btnEl.classList.remove('loading');
+                        btnEl.innerHTML = '<svg width="14" height="14" viewBox="0 0 24 24" style="stroke:currentColor;fill:none;"><use href="#icon-translate"/></svg> 批量翻译';
+                    }
+                    return;
+                }
+                const item = toTranslate[i];
+                statusEl.textContent = `⏳ 正在翻译 (${i + 1}/${toTranslate.length})：${item.kr}`;
+                try {
+                    const translated = await translateKoreanToChinese(item.kr);
+                    if (batchTranslateRequestId !== currentRequestId) {
+                        if (btnEl) {
+                            btnEl.classList.remove('loading');
+                            btnEl.innerHTML = '<svg width="14" height="14" viewBox="0 0 24 24" style="stroke:currentColor;fill:none;"><use href="#icon-translate"/></svg> 批量翻译';
+                        }
+                        return;
+                    }
+                    if (translated) {
+                        item.zh = translated;
+                        translatedCount++;
+                    } else {
+                        failedCount++;
+                    }
+                } catch (e) {
+                    failedCount++;
+                }
+                // 在每行之间添加短暂延迟，避免API限制
+                if (i < toTranslate.length - 1) {
+                    await new Promise(resolve => setTimeout(resolve, 400));
+                }
+            }
+
+            // 重建textarea内容
+            const resultLines = parsedLines.map(l => {
+                if (l.needsTranslation && l.zh) {
+                    const restPart = l.rest ? ',' + l.rest : '';
+                    return l.kr + ',' + l.zh + restPart;
+                }
+                return l.original;
+            });
+            textarea.value = resultLines.join('\n');
+
+            if (btnEl) {
+                btnEl.classList.remove('loading');
+                btnEl.innerHTML = '<svg width="14" height="14" viewBox="0 0 24 24" style="stroke:currentColor;fill:none;"><use href="#icon-translate"/></svg> 批量翻译';
+            }
+            if (translatedCount > 0 && failedCount === 0) {
+                statusEl.textContent = `✅ 批量翻译完成！成功翻译 ${translatedCount} 个单词`;
+                statusEl.className = 'batch-translate-status success';
+                playSoundEffect('add');
+            } else if (translatedCount > 0 && failedCount > 0) {
+                statusEl.textContent = `⚠️ 翻译完成：成功 ${translatedCount} 个，失败 ${failedCount} 个`;
+                statusEl.className = 'batch-translate-status error';
+            } else {
+                statusEl.textContent = `❌ 翻译失败 ${failedCount} 个单词，请检查网络`;
+                statusEl.className = 'batch-translate-status error';
+            }
+            setTimeout(() => {
+                if (statusEl.className.includes('success') || statusEl.className.includes('error')) {
+                    statusEl.textContent = '';
+                    statusEl.className = 'batch-translate-status';
+                }
+            }, 5000);
         }
 
         // 韩语输入框失去焦点时自动翻译
@@ -1500,12 +1811,10 @@
             krInput.addEventListener('blur', () => {
                 const kr = krInput.value.trim();
                 const zh = zhInput.value.trim();
-                // 仅当韩语非空且中文释义为空时自动触发
                 if (kr && !zh && /[\uAC00-\uD7AF\u1100-\u11FF\u3130-\u318F]/.test(kr)) {
                     triggerAutoTranslate();
                 }
             });
-            // 回车键也可触发翻译
             krInput.addEventListener('keydown', (e) => {
                 if (e.key === 'Enter' && krInput.value.trim()) {
                     e.preventDefault();
@@ -1651,12 +1960,11 @@
             document.getElementById('backPOS').innerText = currentWord.pos || '';
             document.getElementById('backRoma').innerText = currentWord.roma || '';
 
-            // 例句及朗读按钮
             let exampleText = currentWord.example || '';
             document.getElementById('backExample').innerText = exampleText;
             let btnSpeakExample = document.getElementById('btnSpeakExample');
             if (exampleText && btnSpeakExample) {
-                btnSpeakExample.style.display = 'inline-block';
+                btnSpeakExample.style.display = 'inline-flex';
             } else if (btnSpeakExample) {
                 btnSpeakExample.style.display = 'none';
             }
@@ -2205,7 +2513,7 @@
                         ${tagsHtml}
                     </div>
                     <div class="word-row-item-right">
-                        <button class="headphone-btn-sm" onclick="speakWordFromList(event, {korean:'${escapedKorean}'})" title="朗读">🔊</button>
+                        <button class="headphone-btn-sm" onclick="speakWordFromList(event, {korean:'${escapedKorean}'})" title="朗读"><svg viewBox="0 0 24 24"><use href="#icon-speaker-modern"/></svg></button>
                         <button onclick="event.stopPropagation();deleteWord('${escapeHTML(String(w.id))}')" style="background:none;border:none;cursor:pointer;font-size:16px;padding:2px 4px;">🗑️</button>
                     </div>
                 </div>`;
@@ -2261,6 +2569,8 @@
             document.getElementById('editExample').value = w.example || '';
             document.getElementById('editRoma').value = w.roma || '';
             document.getElementById('editTags').value = (w.tags || []).join(',');
+            document.getElementById('detailTranslateStatus').textContent = '';
+            document.getElementById('detailTranslateStatus').className = 'detail-translate-status';
             document.getElementById('wordDetailPopup').style.display = 'flex';
             playSoundEffect('click');
         }
