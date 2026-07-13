@@ -1095,6 +1095,31 @@
         .import-group-row .btn-sm {
             flex-shrink: 0;
         }
+        .voice-quality-badge {
+            display: inline-block;
+            font-size: 9px;
+            padding: 2px 6px;
+            border-radius: 8px;
+            margin-left: 4px;
+            font-weight: 500;
+            vertical-align: middle;
+        }
+        .voice-quality-local {
+            background: #e8f5e9;
+            color: #2e7d32;
+        }
+        .voice-quality-online {
+            background: #e3f2fd;
+            color: #1565c0;
+        }
+        body.dark .voice-quality-local {
+            background: #1b3a1b;
+            color: #7dce82;
+        }
+        body.dark .voice-quality-online {
+            background: #1a2a3a;
+            color: #7db8e0;
+        }
     </style>
 </head>
 <body id="mainBody">
@@ -1115,23 +1140,9 @@
             <g id="icon-upload"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><polyline points="17 8 12 3 7 8" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><line x1="12" y1="3" x2="12" y2="15" stroke-width="2" stroke-linecap="round"/></g>
             <g id="icon-speaker"><path d="M11 5L6 9H2v6h4l5 4V5z" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><path d="M15.54 8.46a5 5 0 010 7.07" fill="none" stroke-width="2" stroke-linecap="round"/><path d="M19.07 4.93a10 10 0 010 14.14" fill="none" stroke-width="2" stroke-linecap="round"/></g>
             <g id="icon-refresh"><polyline points="23 4 23 10 17 10" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></g>
-            <g id="icon-speaker-modern">
-                <rect x="3" y="7.5" width="6" height="9" rx="2" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-                <path d="M9 9.5L15 5.5v13L9 14.5" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-                <path d="M18 9a3 3 0 0 1 0 6" fill="none" stroke-width="2" stroke-linecap="round"/>
-            </g>
-            <g id="icon-speaker-wave">
-                <rect x="3" y="7.5" width="6" height="9" rx="2" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-                <path d="M9 9.5L15 5.5v13L9 14.5" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-                <path d="M18 8a4 4 0 0 1 0 8" fill="none" stroke-width="2" stroke-linecap="round"/>
-                <path d="M21 6a7 7 0 0 1 0 12" fill="none" stroke-width="2" stroke-linecap="round"/>
-            </g>
-            <g id="icon-translate">
-                <circle cx="12" cy="12" r="10" fill="none" stroke-width="2"/>
-                <ellipse cx="12" cy="12" rx="5" ry="10" fill="none" stroke-width="2"/>
-                <line x1="2" y1="9" x2="22" y2="9" stroke-width="2" stroke-linecap="round"/>
-                <line x1="2" y1="15" x2="22" y2="15" stroke-width="2" stroke-linecap="round"/>
-            </g>
+            <g id="icon-speaker-modern"><rect x="3" y="7.5" width="6" height="9" rx="2" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><path d="M9 9.5L15 5.5v13L9 14.5" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><path d="M18 9a3 3 0 0 1 0 6" fill="none" stroke-width="2" stroke-linecap="round"/></g>
+            <g id="icon-speaker-wave"><rect x="3" y="7.5" width="6" height="9" rx="2" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><path d="M9 9.5L15 5.5v13L9 14.5" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><path d="M18 8a4 4 0 0 1 0 8" fill="none" stroke-width="2" stroke-linecap="round"/><path d="M21 6a7 7 0 0 1 0 12" fill="none" stroke-width="2" stroke-linecap="round"/></g>
+            <g id="icon-translate"><circle cx="12" cy="12" r="10" fill="none" stroke-width="2"/><ellipse cx="12" cy="12" rx="5" ry="10" fill="none" stroke-width="2"/><line x1="2" y1="9" x2="22" y2="9" stroke-width="2" stroke-linecap="round"/><line x1="2" y1="15" x2="22" y2="15" stroke-width="2" stroke-linecap="round"/></g>
             <g id="icon-chevron-down"><polyline points="6,9 12,15 18,9" fill="none" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/></g>
             <g id="icon-folder"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></g>
         </defs>
@@ -1188,16 +1199,12 @@
             <div class="progress-info" id="spellProgress"></div>
             <div style="display:flex;align-items:center;justify-content:center;gap:10px;margin:4px 0;flex-wrap:wrap;">
                 <span style="cursor:pointer;color:#b5496c;font-size:13px;" onclick="toggleSpellMode()" id="spellModeToggle">🔀 随机拼写</span>
-                <button class="btn-spell-reset" onclick="resetSpell()" title="重新拼写今日单词">
-                    <svg width="14" height="14" viewBox="0 0 24 24" style="stroke:currentColor;fill:none;"><use href="#icon-refresh"/></svg> 重新拼写
-                </button>
+                <button class="btn-spell-reset" onclick="resetSpell()" title="重新拼写今日单词"><svg width="14" height="14" viewBox="0 0 24 24" style="stroke:currentColor;fill:none;"><use href="#icon-refresh"/></svg> 重新拼写</button>
             </div>
             <div class="card-face" id="spellSubPanel">
                 <div style="display:flex;align-items:center;justify-content:center;gap:8px;margin-bottom:6px;">
                     <span class="meaning-chinese" id="spellChinese" style="font-size:28px;"></span>
-                    <button class="headphone-btn" onclick="speakSpellWord()" title="朗读发音" style="padding:4px 6px;flex-shrink:0;">
-                        <svg viewBox="0 0 24 24"><use href="#icon-speaker-modern"/></svg>
-                    </button>
+                    <button class="headphone-btn" onclick="speakSpellWord()" title="朗读发音" style="padding:4px 6px;flex-shrink:0;"><svg viewBox="0 0 24 24"><use href="#icon-speaker-modern"/></svg></button>
                 </div>
                 <input class="input-field" id="spellInput" placeholder="输入韩语拼写..." autocomplete="off" autocapitalize="off" style="text-align:center;font-size:18px;">
                 <div style="display:flex;flex-direction:column;gap:8px;width:100%;">
@@ -1218,9 +1225,7 @@
                 <button class="btn-primary" onclick="exportBook()" style="margin-top:6px;">📤 导出CSV</button>
                 <div class="import-group-row" style="margin-top:8px;">
                     <label style="font-size:12px;color:#5d4b5a;white-space:nowrap;">📁 导入分组</label>
-                    <select class="input-field" id="importGroupId" style="margin-bottom:0;">
-                        <option value="">默认：未分组</option>
-                    </select>
+                    <select class="input-field" id="importGroupId" style="margin-bottom:0;"><option value="">默认：未分组</option></select>
                     <button class="btn-sm" onclick="createNewGroupForImport()" title="新建分组" style="flex-shrink:0;">➕</button>
                 </div>
                 <details style="margin:6px 0;text-align:left;">
@@ -1242,18 +1247,14 @@
                 <input class="input-field" id="inputPOS" placeholder="词性 (如：名词、动词、形容词，可手动修改)">
                 <input class="input-field" id="inputExample" placeholder="例句">
                 <div class="group-select-row" style="margin-bottom:4px;">
-                    <select class="input-field" id="inputGroup" style="margin-bottom:0;">
-                        <option value="">📁 分组 (可选，默认为未分组)</option>
-                    </select>
+                    <select class="input-field" id="inputGroup" style="margin-bottom:0;"><option value="">📁 分组 (可选，默认为未分组)</option></select>
                     <button class="btn-sm" onclick="createNewGroup()" title="新建分组" style="flex-shrink:0;">➕分组</button>
                 </div>
                 <div class="filter-row"><input class="input-field" id="inputTags" placeholder="标签" style="flex:1;"><button class="btn-primary" onclick="addWord()" style="width:auto;flex-shrink:0;">➕ 添加</button></div>
                 <p style="font-size:11px;color:#b5a0b5;margin-top:4px;">💡 输入韩语后点击「翻译」自动填写释义和词性，也可手动修改</p>
             </div>
             <div class="filter-row"><button class="filter-btn" onclick="toggleMasteredView()">📦 熟词箱</button><button class="filter-btn" onclick="openSearch()">🔍 全局搜索</button><button class="btn-sm" onclick="openGroupManager()" style="flex-shrink:0;">📁 管理分组</button></div>
-            <div class="word-list-toggle" id="wordListToggle" onclick="toggleWordList()">
-                <span id="wordListToggleIcon">▾</span> <span id="wordListToggleText">折叠单词列表</span> <span style="font-size:10px;color:#b5a0b5;" id="wordListCount"></span>
-            </div>
+            <div class="word-list-toggle" id="wordListToggle" onclick="toggleWordList()"><span id="wordListToggleIcon">▾</span> <span id="wordListToggleText">折叠单词列表</span> <span style="font-size:10px;color:#b5a0b5;" id="wordListCount"></span></div>
             <div class="word-list" id="wordListContainer"></div>
         </div>
 
@@ -1276,10 +1277,7 @@
                 <div class="eb-legend" id="ebbinghausLegend"></div>
                 <p style="font-size:11px;color:#b5a0b5;margin-top:6px;" id="ebbinghausTotal"></p>
             </div>
-            <div class="card-face">
-                <h3>📅 本月打卡</h3>
-                <div id="calendarArea" style="display:flex;flex-wrap:wrap;gap:4px;justify-content:center;"></div>
-            </div>
+            <div class="card-face"><h3>📅 本月打卡</h3><div id="calendarArea" style="display:flex;flex-wrap:wrap;gap:4px;justify-content:center;"></div></div>
         </div>
 
         <!-- 设置页 -->
@@ -1310,6 +1308,10 @@
                 <div class="filter-row"><label>卡片字体大小：</label><input class="input-field input-field-sm" id="fontSizeInput" type="number" value="36" style="width:65px;" onchange="changeFontSize(this.value)"></div>
                 <div class="filter-row" style="align-items:center;"><label>韩语发音：</label><select class="input-field input-field-sm" id="voiceSelect" onchange="selectVoice(this.value)" style="width:auto;flex:1;margin-bottom:0;"><option value="auto">自动选择</option></select></div>
                 <p class="voice-hint" id="voiceHint">⚠️ 未检测到韩语发音人，请在系统中添加韩语语音或使用Google TTS</p>
+                <div class="filter-row" style="align-items:center;margin-top:6px;">
+                    <button class="btn-sm" onclick="refreshVoices()" title="重新扫描本地语音">🔄 刷新语音列表</button>
+                    <span style="font-size:10px;color:#b5a0b5;" id="voiceCountInfo"></span>
+                </div>
                 <div class="filter-row" style="align-items:center;margin-top:10px;">
                     <label>🔊 操作音效：</label>
                     <button class="btn-sm" id="soundToggleBtn" onclick="toggleSound()">🔊 开启</button>
@@ -1327,15 +1329,10 @@
 
         <!-- 弹窗：单词编辑 -->
         <div class="modal" id="wordDetailPopup" onclick="closeWordDetail(event)"><div class="modal-content" onclick="event.stopPropagation()">
-            <div class="detail-korean-row">
-                <h3 id="detailKorean" contenteditable="true"></h3>
-                <button class="btn-translate-inline" onclick="translateDetailKorean()" id="btnDetailTranslate" title="翻译韩语并自动填写释义和词性"><svg width="13" height="13" viewBox="0 0 24 24" style="stroke:currentColor;fill:none;"><use href="#icon-translate"/></svg> 翻译</button>
-            </div>
+            <div class="detail-korean-row"><h3 id="detailKorean" contenteditable="true"></h3><button class="btn-translate-inline" onclick="translateDetailKorean()" id="btnDetailTranslate" title="翻译韩语并自动填写释义和词性"><svg width="13" height="13" viewBox="0 0 24 24" style="stroke:currentColor;fill:none;"><use href="#icon-translate"/></svg> 翻译</button></div>
             <div class="detail-translate-status" id="detailTranslateStatus"></div>
             <input class="input-field" id="editChinese" placeholder="释义"><input class="input-field" id="editPOS" placeholder="词性"><div style="display:flex;gap:4px;align-items:center;"><input class="input-field" id="editExample" placeholder="例句" style="flex:1;margin-bottom:0;"><button class="headphone-btn-sm" onclick="speakEditExample(event)" title="朗读例句"><svg viewBox="0 0 24 24"><use href="#icon-speaker-wave"/></svg></button></div>
-            <div class="group-select-row" style="margin-bottom:8px;">
-                <select class="input-field" id="editGroup" style="margin-bottom:0;"><option value="">📁 分组 (未分组)</option></select>
-            </div>
+            <div class="group-select-row" style="margin-bottom:8px;"><select class="input-field" id="editGroup" style="margin-bottom:0;"><option value="">📁 分组 (未分组)</option></select></div>
             <input class="input-field" id="editTags" placeholder="标签 (逗号分隔)"><button class="btn-primary" onclick="saveWordEdit()">💾 保存</button><button class="btn-primary" style="background:#ccc;" onclick="closeWordDetailDirect()">关闭</button></div></div>
 
         <!-- 弹窗：单词本列表 -->
@@ -1354,7 +1351,7 @@
             return String(str).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#39;');
         }
 
-        const STORAGE_KEY = 'korean_v9_noroma';
+        const STORAGE_KEY = 'korean_v9_optimized';
         const GOOGLE_TTS_URI = 'google-tts';
         let appData = {
             books: [],
@@ -1384,7 +1381,6 @@
         let translateRequestId = 0;
         let detailTranslateRequestId = 0;
         let batchTranslateRequestId = 0;
-
         let audioCtx = null;
 
         function ensureAudioContext() {
@@ -1596,34 +1592,101 @@
             return '名词';
         }
 
+        // ============ 优化后的翻译函数（多备用API + 重试机制）============
         async function translateKoreanToChinese(text) {
-            const url = `https://api.mymemory.translated.net/get?q=${encodeURIComponent(text)}&langpair=ko|zh-CN`;
-            try {
-                const controller = new AbortController();
-                const timeoutId = setTimeout(() => controller.abort(), 8000);
-                const response = await fetch(url, { signal: controller.signal });
-                clearTimeout(timeoutId);
-                const data = await response.json();
-                if (data.responseStatus === 200 && data.responseData && data.responseData.translatedText) {
-                    let translated = data.responseData.translatedText.trim();
-                    translated = translated.replace(/\s+/g, ' ').trim();
-                    return translated;
-                }
-            } catch (e) {}
+            if (!text || !text.trim()) return null;
+            const trimmed = text.trim();
+
+            // 方法1：Google Translate API（非官方但最稳定）
             try {
                 const gUrl =
-                    `https://translate.googleapis.com/translate_a/single?client=gtx&sl=ko&tl=zh-CN&dt=t&q=${encodeURIComponent(text)}`;
+                    `https://translate.googleapis.com/translate_a/single?client=gtx&sl=ko&tl=zh-CN&dt=t&dj=1&q=${encodeURIComponent(trimmed)}`;
+                const controller = new AbortController();
+                const timeoutId = setTimeout(() => controller.abort(), 8000);
+                const response = await fetch(gUrl, { signal: controller.signal });
+                clearTimeout(timeoutId);
+                if (response.ok) {
+                    const data = await response.json();
+                    if (data && data.sentences && data.sentences.length > 0) {
+                        let translated = data.sentences.map(s => s.trans || '').join('').trim();
+                        translated = translated.replace(/\s+/g, ' ').trim();
+                        if (translated && translated !== trimmed) return translated;
+                    }
+                    // 兼容旧格式
+                    if (data && data[0] && Array.isArray(data[0])) {
+                        let translated = data[0].map(seg => (seg && seg[0]) ? seg[0] : '').join('').trim();
+                        translated = translated.replace(/\s+/g, ' ').trim();
+                        if (translated && translated !== trimmed) return translated;
+                    }
+                }
+            } catch (e) {
+                // Google API失败，继续尝试下一个
+            }
+
+            // 方法2：Google Translate 备用格式
+            try {
+                const gUrl2 =
+                    `https://translate.googleapis.com/translate_a/single?client=gtx&sl=ko&tl=zh-CN&dt=t&q=${encodeURIComponent(trimmed)}`;
                 const controller2 = new AbortController();
                 const timeoutId2 = setTimeout(() => controller2.abort(), 6000);
-                const gResponse = await fetch(gUrl, { signal: controller2.signal });
+                const response2 = await fetch(gUrl2, { signal: controller2.signal });
                 clearTimeout(timeoutId2);
-                const gData = await gResponse.json();
-                if (gData && gData[0] && gData[0].length > 0) {
-                    let translated = gData[0].map(seg => seg[0] || '').join('').trim();
-                    translated = translated.replace(/\s+/g, ' ').trim();
-                    if (translated) return translated;
+                if (response2.ok) {
+                    const data2 = await response2.json();
+                    if (data2 && data2[0] && Array.isArray(data2[0]) && data2[0].length > 0) {
+                        let translated = data2[0].map(seg => (seg && seg[0]) ? seg[0] : '').join('').trim();
+                        translated = translated.replace(/\s+/g, ' ').trim();
+                        if (translated && translated !== trimmed) return translated;
+                    }
                 }
-            } catch (e2) {}
+            } catch (e) {
+                // 继续尝试
+            }
+
+            // 方法3：MyMemory API
+            try {
+                const mUrl =
+                    `https://api.mymemory.translated.net/get?q=${encodeURIComponent(trimmed)}&langpair=ko|zh-CN`;
+                const controller3 = new AbortController();
+                const timeoutId3 = setTimeout(() => controller3.abort(), 8000);
+                const response3 = await fetch(mUrl, { signal: controller3.signal });
+                clearTimeout(timeoutId3);
+                if (response3.ok) {
+                    const data3 = await response3.json();
+                    if (data3.responseStatus === 200 && data3.responseData && data3.responseData.translatedText) {
+                        let translated = data3.responseData.translatedText.trim();
+                        translated = translated.replace(/\s+/g, ' ').trim();
+                        if (translated && translated !== trimmed) return translated;
+                    }
+                }
+            } catch (e) {
+                // 继续尝试
+            }
+
+            // 方法4：LibreTranslate (备用)
+            try {
+                const lUrl = 'https://libretranslate.com/translate';
+                const controller4 = new AbortController();
+                const timeoutId4 = setTimeout(() => controller4.abort(), 6000);
+                const response4 = await fetch(lUrl, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ q: trimmed, source: 'ko', target: 'zh', format: 'text' }),
+                    signal: controller4.signal
+                });
+                clearTimeout(timeoutId4);
+                if (response4.ok) {
+                    const data4 = await response4.json();
+                    if (data4 && data4.translatedText) {
+                        let translated = data4.translatedText.trim();
+                        translated = translated.replace(/\s+/g, ' ').trim();
+                        if (translated && translated !== trimmed) return translated;
+                    }
+                }
+            } catch (e) {
+                // 所有方法都失败
+            }
+
             return null;
         }
 
@@ -1758,7 +1821,7 @@
                     if (translated) { item.zh = translated;
                         translatedCount++; } else { failedCount++; }
                 } catch (e) { failedCount++; }
-                if (i < toTranslate.length - 1) { await new Promise(resolve => setTimeout(resolve, 400)); }
+                if (i < toTranslate.length - 1) { await new Promise(resolve => setTimeout(resolve, 500)); }
             }
             const resultLines = parsedLines.map(l => { if (l.needsTranslation && l.zh) { const restPart = l.rest ?
                         ',' + l.rest : ''; return l.kr + ',' + l.zh + restPart; } return l.original; });
@@ -1791,13 +1854,25 @@
                     triggerAutoTranslate(); } });
         }
 
+        // ============ 优化后的语音加载（支持本地多发音人）============
         function loadVoices() {
             return new Promise(r => {
                 let voices = speechSynth.getVoices();
                 if (voices.length) { updateVoiceList(voices);
-                    r(); } else speechSynth.onvoiceschanged = () => { voices = speechSynth.getVoices();
-                    updateVoiceList(voices);
-                    r(); };
+                    r(); } else {
+                    speechSynth.onvoiceschanged = () => {
+                        voices = speechSynth.getVoices();
+                        updateVoiceList(voices);
+                        r();
+                    };
+                    // 超时兜底
+                    setTimeout(() => {
+                        voices = speechSynth.getVoices();
+                        if (voices.length) { updateVoiceList(voices);
+                            r(); } else { updateVoiceList([]);
+                            r(); }
+                    }, 2000);
+                }
             });
         }
 
@@ -1805,27 +1880,62 @@
             allKoreanVoices = voices.filter(v => v.lang.startsWith('ko'));
             let sel = document.getElementById('voiceSelect');
             let hint = document.getElementById('voiceHint');
+            let countInfo = document.getElementById('voiceCountInfo');
             if (!sel) return;
-            sel.innerHTML = '<option value="auto">自动选择 (浏览器)</option>';
+            sel.innerHTML = '<option value="auto">自动选择 (浏览器默认)</option>';
             sel.innerHTML +=
-                `<option value="${GOOGLE_TTS_URI}" ${appData.settings.selectedVoiceURI===GOOGLE_TTS_URI?'selected':''}>🌐 Google TTS (在线·推荐)</option>`;
-            if (allKoreanVoices.length === 0) { sel.innerHTML += '<option value="auto" disabled>— 无浏览器韩语发音人 —</option>';
-                if (hint) hint.style.display = 'block'; } else { allKoreanVoices.forEach(v => { sel.innerHTML +=
-                        `<option value="${escapeHTML(v.voiceURI)}" ${appData.settings.selectedVoiceURI===v.voiceURI?'selected':''}>🔊 ${escapeHTML(v.name)}</option>`; });
-                if (hint) hint.style.display = 'none'; }
+                `<option value="${GOOGLE_TTS_URI}" ${appData.settings.selectedVoiceURI===GOOGLE_TTS_URI?'selected':''}>🌐 Google TTS (在线·推荐) <span class="voice-quality-badge voice-quality-online">在线</span></option>`;
+            if (allKoreanVoices.length === 0) {
+                sel.innerHTML += '<option value="auto" disabled>— 未检测到本地韩语发音人 —</option>';
+                if (hint) hint.style.display = 'block';
+                if (countInfo) countInfo.textContent = '本地: 0个';
+            } else {
+                allKoreanVoices.forEach((v, idx) => {
+                    const isLocal = v.localService !== false;
+                    const qualityLabel = isLocal ? '本地' : '网络';
+                    const qualityClass = isLocal ? 'voice-quality-local' : 'voice-quality-online';
+                    sel.innerHTML +=
+                        `<option value="${escapeHTML(v.voiceURI)}" ${appData.settings.selectedVoiceURI===v.voiceURI?'selected':''}>🔊 ${escapeHTML(v.name)} <span class="voice-quality-badge ${qualityClass}">${qualityLabel}</span> ${isLocal?'':'🌐'}</option>`;
+                });
+                if (hint) hint.style.display = 'none';
+                if (countInfo) countInfo.textContent = `本地: ${allKoreanVoices.length}个`;
+            }
             selectVoice(appData.settings.selectedVoiceURI);
+        }
+
+        function refreshVoices() {
+            const voices = speechSynth.getVoices();
+            updateVoiceList(voices);
+            // 强制触发onvoiceschanged
+            if (speechSynth.onvoiceschanged) {
+                speechSynth.onvoiceschanged();
+            }
+            playSoundEffect('click');
+            const countInfo = document.getElementById('voiceCountInfo');
+            if (countInfo) {
+                countInfo.textContent = `已刷新 · 本地: ${allKoreanVoices.length}个`;
+                setTimeout(() => { if (countInfo) countInfo.textContent = `本地: ${allKoreanVoices.length}个`; }, 2000);
+            }
         }
 
         function selectVoice(uri) {
             appData.settings.selectedVoiceURI = uri;
             saveData();
-            if (uri === GOOGLE_TTS_URI) { koreanVoice = allKoreanVoices.length ? allKoreanVoices[0] : null; } else if (
-                uri === 'auto' || !allKoreanVoices.length) { koreanVoice = allKoreanVoices.length ? allKoreanVoices[
-                0] : null; } else { koreanVoice = allKoreanVoices.find(v => v.voiceURI === uri) || allKoreanVoices[
-                0] || null; }
+            if (uri === GOOGLE_TTS_URI) {
+                koreanVoice = allKoreanVoices.length ? allKoreanVoices[0] : null;
+            } else if (uri === 'auto' || !allKoreanVoices.length) {
+                koreanVoice = allKoreanVoices.length ? allKoreanVoices[0] : null;
+            } else {
+                koreanVoice = allKoreanVoices.find(v => v.voiceURI === uri) || allKoreanVoices[0] || null;
+            }
             let hint = document.getElementById('voiceHint');
-            if (hint) { if (isGoogleTTS()) { hint.style.display = 'none'; } else { hint.style.display = allKoreanVoices
-                    .length === 0 ? 'block' : 'none'; } }
+            if (hint) {
+                if (isGoogleTTS()) { hint.style.display = 'none'; } else { hint.style.display = allKoreanVoices
+                        .length === 0 ? 'block' : 'none'; }
+            }
+            // 更新下拉框选中状态
+            let sel = document.getElementById('voiceSelect');
+            if (sel) sel.value = uri;
         }
 
         function speak(text, rate) { if (!text) return; if (isGoogleTTS()) { speakWithGoogleTTS(text, rate); } else {
@@ -1913,8 +2023,7 @@
             cardFlipped = !cardFlipped;
             playSoundEffect('flip');
             if (!cardFlipped && appData.settings.autoReadOnReview && currentWord && currentWord.korean) {
-                speak(currentWord.korean);
-            } }
+                speak(currentWord.korean); } }
 
         function markWord(type) {
             if (!currentWord) return;
@@ -2466,7 +2575,7 @@
         }
 
         function exportAllData() {
-            let exportObj = { version: 'v9', exportedAt: new Date().toISOString(), data: JSON.parse(JSON.stringify(
+            let exportObj = { version: 'v9_optimized', exportedAt: new Date().toISOString(), data: JSON.parse(JSON.stringify(
                     appData)) };
             let jsonStr = JSON.stringify(exportObj, null, 2),
                 blob = new Blob([jsonStr], { type: 'application/json;charset=utf-8' }),
