@@ -239,8 +239,8 @@
             flex-shrink: 0;
         }
         .headphone-btn svg {
-            width: 22px;
-            height: 22px;
+            width: 28px;
+            height: 28px;
             stroke: currentColor;
             fill: none;
             stroke-width: 2;
@@ -267,8 +267,8 @@
             justify-content: center;
         }
         .headphone-btn-sm svg {
-            width: 16px;
-            height: 16px;
+            width: 20px;
+            height: 20px;
             stroke: currentColor;
             fill: none;
             stroke-width: 2;
@@ -1078,6 +1078,23 @@
         .group-select-row .btn-sm {
             flex-shrink: 0;
         }
+        .import-group-row {
+            display: flex;
+            gap: 6px;
+            align-items: center;
+            flex-wrap: wrap;
+            margin-bottom: 8px;
+        }
+        .import-group-row select {
+            flex: 1;
+            min-width: 100px;
+            margin-bottom: 0;
+            padding: 8px 10px;
+            font-size: 13px;
+        }
+        .import-group-row .btn-sm {
+            flex-shrink: 0;
+        }
     </style>
 </head>
 <body id="mainBody">
@@ -1177,7 +1194,7 @@
             </div>
             <div class="card-face" id="spellSubPanel">
                 <span class="meaning-chinese" id="spellChinese" style="font-size:28px;"></span>
-                <button class="headphone-btn" onclick="speakSpellWord()" style="margin:8px 0;" title="朗读发音"><svg viewBox="0 0 24 24" style="width:26px;height:26px;"><use href="#icon-speaker-modern"/></svg></button>
+                <button class="headphone-btn" onclick="speakSpellWord()" style="margin:8px 0;" title="朗读发音"><svg viewBox="0 0 24 24"><use href="#icon-speaker-modern"/></svg></button>
                 <input class="input-field" id="spellInput" placeholder="输入韩语拼写..." autocomplete="off" autocapitalize="off" style="text-align:center;font-size:18px;">
                 <div style="display:flex;flex-direction:column;gap:8px;width:100%;">
                     <button class="btn-primary" onclick="checkSpell()" id="spellCheckBtn">✅ 检查</button>
@@ -1195,8 +1212,17 @@
                 <button class="btn-primary" onclick="document.getElementById('importFile').click()">📥 导入CSV</button>
                 <input type="file" id="importFile" accept=".csv,.txt" style="display:none;" onchange="handleImport(event)">
                 <button class="btn-primary" onclick="exportBook()" style="margin-top:6px;">📤 导出CSV</button>
+                <!-- 导入分组选择器（CSV导入和批量添加共用） -->
+                <div class="import-group-row" style="margin-top:8px;">
+                    <label style="font-size:12px;color:#5d4b5a;white-space:nowrap;">📁 导入分组</label>
+                    <select class="input-field" id="importGroupId" style="margin-bottom:0;">
+                        <option value="">默认：未分组</option>
+                    </select>
+                    <button class="btn-sm" onclick="createNewGroupForImport()" title="新建分组" style="flex-shrink:0;">➕</button>
+                </div>
                 <details style="margin:6px 0;text-align:left;">
                     <summary style="cursor:pointer;font-weight:600;color:#5d4b5a;padding:4px 0;">📝 批量添加单词</summary>
+                    <p style="font-size:10px;color:#b5a0b5;margin-top:2px;">上方「导入分组」选择器同样适用于批量添加</p>
                     <textarea class="input-field" id="batchInput" placeholder="每行一个：韩语,释义&#10;例如：&#10;사랑,爱情&#10;공부,学习&#10;也可以只写韩语，让翻译功能自动补全释义" style="min-height:90px;font-size:13px;"></textarea>
                     <div class="batch-translate-row">
                         <button class="btn-sm-translate" onclick="batchTranslateWords()" id="btnBatchTranslate" title="批量翻译韩语（仅翻译未填写释义的行）"><svg width="14" height="14" viewBox="0 0 24 24" style="stroke:currentColor;fill:none;"><use href="#icon-translate"/></svg> 批量翻译</button>
@@ -2132,12 +2158,13 @@
         function populateGroupSelects() {
             const book = getActiveBook();
             const groups = book.groups || [];
-            const selectIds = ['inputGroup', 'editGroup'];
+            const selectIds = ['inputGroup', 'editGroup', 'importGroupId'];
             selectIds.forEach(sid => {
                 const sel = document.getElementById(sid);
                 if (!sel) return;
                 const currentVal = sel.value;
-                sel.innerHTML = '<option value="">📁 分组 (未分组)</option>';
+                const defaultLabel = sid === 'importGroupId' ? '默认：未分组' : '📁 分组 (未分组)';
+                sel.innerHTML = `<option value="">${defaultLabel}</option>`;
                 groups.forEach(g => {
                     sel.innerHTML +=
                         `<option value="${escapeHTML(g.id)}" ${currentVal===g.id?'selected':''}>📁 ${escapeHTML(g.name)}</option>`;
@@ -2155,6 +2182,20 @@
             saveData();
             populateGroupSelects();
             document.getElementById('inputGroup').value = gid;
+            renderWordList();
+            playSoundEffect('add');
+        }
+
+        function createNewGroupForImport() {
+            const name = prompt('请输入新分组名称：');
+            if (!name || !name.trim()) return;
+            const book = getActiveBook();
+            if (!book.groups) book.groups = [];
+            const gid = 'g' + Date.now();
+            book.groups.push({ id: gid, name: name.trim() });
+            saveData();
+            populateGroupSelects();
+            document.getElementById('importGroupId').value = gid;
             renderWordList();
             playSoundEffect('add');
         }
@@ -2310,12 +2351,18 @@
             playSoundEffect('add');
         }
 
+        function getImportGroupId() {
+            const sel = document.getElementById('importGroupId');
+            return sel ? (sel.value.trim() || null) : null;
+        }
+
         function batchAddWords() {
             let text = document.getElementById('batchInput').value.trim();
             if (!text) return;
             let lines = text.split('\n').filter(l => l.trim()),
                 book = getActiveBook(),
                 added = 0;
+            const importGroupId = getImportGroupId();
             const newWords = [];
             lines.forEach(line => {
                 let parts = line.split(/[,\t]/);
@@ -2334,7 +2381,7 @@
                     mastered: false,
                     wrongCount: 0,
                     tags: [],
-                    groupId: null
+                    groupId: importGroupId
                 });
                 added++;
             });
@@ -2344,12 +2391,14 @@
             document.getElementById('batchInput').value = '';
             updateStats();
             playSoundEffect('add');
-            alert(`批量导入完成，新增 ${added} 个单词`);
+            const groupName = importGroupId ? ((book.groups || []).find(g => g.id === importGroupId) || {}).name || importGroupId : '未分组';
+            alert(`批量导入完成，新增 ${added} 个单词，分组：${groupName}`);
         }
 
         function handleImport(event) {
             let file = event.target.files[0];
             if (!file) return;
+            const importGroupId = getImportGroupId();
             let reader = new FileReader();
             reader.onload = function(e) {
                 let lines = e.target.result.split('\n').filter(l => l.trim()),
@@ -2373,7 +2422,7 @@
                         mastered: false,
                         wrongCount: 0,
                         tags: [],
-                        groupId: null
+                        groupId: importGroupId
                     });
                     importedCount++;
                 });
@@ -2381,7 +2430,8 @@
                 saveData();
                 renderWordList();
                 playSoundEffect('add');
-                alert(`导入完成，新增 ${importedCount} 个单词`);
+                const groupName = importGroupId ? ((book.groups || []).find(g => g.id === importGroupId) || {}).name || importGroupId : '未分组';
+                alert(`导入完成，新增 ${importedCount} 个单词，分组：${groupName}`);
             };
             reader.readAsText(file);
             event.target.value = '';
