@@ -662,6 +662,38 @@
                 transform: translateX(-50%) translateY(-20px);
             }
         }
+        .empty-review-cute {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 40px 20px;
+            gap: 12px;
+        }
+        .empty-review-cute .cute-icon {
+            font-size: 72px;
+            animation: bounce 2s infinite;
+        }
+        @keyframes bounce {
+            0%,
+            100% {
+                transform: translateY(0);
+            }
+            50% {
+                transform: translateY(-15px);
+            }
+        }
+        .empty-review-cute .cute-text {
+            font-size: 20px;
+            font-weight: 700;
+            color: #f7a8c4;
+            text-align: center;
+        }
+        .empty-review-cute .cute-sub {
+            font-size: 14px;
+            color: #b5a0b5;
+            text-align: center;
+        }
         .modal {
             display: none;
             position: fixed;
@@ -1344,7 +1376,7 @@
                 <button class="review-btn btn-fuzzy" onclick="markWord('fuzzy')">模糊</button>
                 <button class="review-btn btn-easy" onclick="markWord('easy')">认识</button>
             </div>
-            <div class="empty-message" id="emptyReview" style="display:none;">✨ 暂无待复习单词</div>
+            <div class="empty-message" id="emptyReview" style="display:none;"></div>
         </div>
 
         <!-- 拼写页 -->
@@ -1360,8 +1392,9 @@
                 <button class="btn-spell-reset" onclick="resetSpell()" title="重新拼写"><svg width="14" height="14" viewBox="0 0 24 24" style="stroke:currentColor;fill:none;"><use href="#icon-refresh"/></svg> 重新拼写</button>
             </div>
             <div class="card-face" id="spellSubPanel">
-                <div style="display:flex;align-items:center;justify-content:center;gap:8px;margin-bottom:6px;">
+                <div style="display:flex;align-items:center;justify-content:center;gap:8px;margin-bottom:6px;flex-wrap:wrap;">
                     <span class="meaning-chinese" id="spellChinese" style="font-size:28px;"></span>
+                    <span class="pos-badge-sm" id="spellPosBadge" style="display:none;"></span>
                     <button class="headphone-btn" onclick="speakSpellWord()" title="朗读发音" style="padding:4px 6px;flex-shrink:0;"><svg viewBox="0 0 24 24"><use href="#icon-speaker-modern"/></svg></button>
                 </div>
                 <input class="input-field" id="spellInput" placeholder="输入韩语拼写..." autocomplete="off" autocapitalize="off" style="text-align:center;font-size:18px;">
@@ -1523,7 +1556,7 @@
         const STORAGE_KEY = 'korean_v10_optimized';
         const GOOGLE_TTS_URI = 'google-tts';
 
-        // ============ 存储优化：debounce保存 ============
+        // 存储优化：debounce保存
         let _saveTimeout = null;
         let _pendingSave = false;
         const SAVE_DEBOUNCE_MS = 250;
@@ -1539,7 +1572,6 @@
         }
 
         function saveData() {
-            // 立即保存（用于关键操作如导入、切换单词本等）
             if (_saveTimeout) clearTimeout(_saveTimeout);
             _saveTimeout = null;
             _pendingSave = false;
@@ -1550,8 +1582,7 @@
             try {
                 localStorage.setItem(STORAGE_KEY, JSON.stringify(appData));
             } catch (e) {
-                console.warn('存储失败，可能空间不足:', e.message);
-                // 尝试清理后重试一次
+                console.warn('存储失败:', e.message);
                 try {
                     const essential = {
                         books: appData.books,
@@ -1586,7 +1617,6 @@
             }
         }
 
-        // 页面卸载时确保保存
         window.addEventListener('beforeunload', flushPendingSave);
         window.addEventListener('pagehide', flushPendingSave);
         document.addEventListener('visibilitychange', () => {
@@ -1631,6 +1661,13 @@
         let batchTranslateRequestId = 0;
         let audioCtx = null;
 
+        // 提取纯韩文字符
+        function extractKoreanOnly(str) {
+            if (!str) return '';
+            const matches = str.match(/[\uAC00-\uD7AF\u1100-\u11FF\u3130-\u318F]/g);
+            return matches ? matches.join('') : '';
+        }
+
         function ensureAudioContext() {
             if (!audioCtx) { audioCtx = new(window.AudioContext || window.webkitAudioContext)(); }
             if (audioCtx.state === 'suspended') { audioCtx.resume().catch(() => {}); }
@@ -1665,6 +1702,21 @@
                         gain.gain.exponentialRampToValueAtTime(0.001, now + 0.3);
                         osc.start(now);
                         osc.stop(now + 0.3);
+                        break;
+                    case 'cuteError':
+                        // 可爱错误提示音：轻柔叮咚
+                        const osc2 = ctx.createOscillator();
+                        const gain2 = ctx.createGain();
+                        osc2.connect(gain2);
+                        gain2.connect(ctx.destination);
+                        osc2.type = 'sine';
+                        osc2.frequency.setValueAtTime(523, now);
+                        osc2.frequency.setValueAtTime(659, now + 0.07);
+                        osc2.frequency.setValueAtTime(587, now + 0.14);
+                        gain2.gain.setValueAtTime(0.2, now);
+                        gain2.gain.exponentialRampToValueAtTime(0.001, now + 0.25);
+                        osc2.start(now);
+                        osc2.stop(now + 0.25);
                         break;
                     case 'error':
                         osc.type = 'sawtooth';
@@ -1709,16 +1761,12 @@
         }
 
         function initAudioContextOnInteraction() {
-            const resumeCtx = () => { if (audioCtx && audioCtx.state === 'suspended') { audioCtx.resume().catch(
-                    () => {}); } };
-            ['touchstart', 'click', 'keydown'].forEach(evt => { document.addEventListener(evt, resumeCtx, { once: true,
-                    passive: true }); });
+            const resumeCtx = () => { if (audioCtx && audioCtx.state === 'suspended') { audioCtx.resume().catch(() => {}); } };
+            ['touchstart', 'click', 'keydown'].forEach(evt => { document.addEventListener(evt, resumeCtx, { once: true, passive: true }); });
         }
 
         function isGoogleTTS() { return appData.settings.selectedVoiceURI === GOOGLE_TTS_URI; }
-
         function getGoogleTtsUrl(text) { const encoded = encodeURIComponent(text); return `https://translate.google.com/translate_tts?ie=UTF-8&client=tw-ob&tl=ko&q=${encoded}`; }
-
         function speakWithGoogleTTS(text, rate) {
             stopGoogleAudio();
             const url = getGoogleTtsUrl(text);
@@ -1726,16 +1774,10 @@
             audio.playbackRate = rate || currentSpeed;
             currentGoogleAudio = audio;
             audio.onended = () => { if (currentGoogleAudio === audio) currentGoogleAudio = null; };
-            audio.onerror = () => { if (currentGoogleAudio === audio) currentGoogleAudio = null;
-                speakWithBrowserTTS(text, rate); };
-            audio.play().catch(() => { if (currentGoogleAudio === audio) currentGoogleAudio = null;
-                speakWithBrowserTTS(text, rate); });
+            audio.onerror = () => { if (currentGoogleAudio === audio) currentGoogleAudio = null; speakWithBrowserTTS(text, rate); };
+            audio.play().catch(() => { if (currentGoogleAudio === audio) currentGoogleAudio = null; speakWithBrowserTTS(text, rate); });
         }
-
-        function stopGoogleAudio() { if (currentGoogleAudio) { try { currentGoogleAudio.pause();
-                currentGoogleAudio.currentTime = 0;
-                currentGoogleAudio.src = ''; } catch (e) {} currentGoogleAudio = null; } }
-
+        function stopGoogleAudio() { if (currentGoogleAudio) { try { currentGoogleAudio.pause(); currentGoogleAudio.currentTime = 0; currentGoogleAudio.src = ''; } catch (e) {} currentGoogleAudio = null; } }
         function speakWithBrowserTTS(text, rate) {
             speechSynth.cancel();
             if (!text) return;
@@ -1746,9 +1788,7 @@
             speechSynth.speak(u);
         }
 
-        // ============ 今天日期检查 & 重置 ============
         function getTodayStr() { return new Date().toDateString(); }
-
         function checkAndResetToday() {
             const today = getTodayStr();
             if (appData.todayLearnedDate !== today) {
@@ -1762,14 +1802,12 @@
                 scheduleSave();
             }
         }
-
         function recordTodayLearned(wordId) {
             checkAndResetToday();
             if (!appData.todayLearnedIds.includes(wordId)) {
                 appData.todayLearnedIds.push(wordId);
             }
         }
-
         function getTodayLearnedWords() {
             checkAndResetToday();
             const book = getActiveBook();
@@ -1780,8 +1818,7 @@
         function initData() {
             let raw = localStorage.getItem(STORAGE_KEY);
             if (raw) {
-                try { appData = JSON.parse(raw); } catch (e) { initDefault();
-                    return; }
+                try { appData = JSON.parse(raw); } catch (e) { initDefault(); return; }
                 appData.books.forEach(b => {
                     if (!b.groups) b.groups = [];
                     b.words.forEach(w => {
@@ -1790,14 +1827,9 @@
                         if (w.groupId === undefined) w.groupId = null;
                     });
                 });
-                if (!appData.stats) appData.stats = { checkIns: [], todayNewCount: 0, todayReviewCount: 0,
-                    todayCorrect: 0, todayTotal: 0, streak: 0, dailyNewGoal: 10 };
-                if (!appData.settings) appData.settings = { darkMode: false, fontSize: 36, lang: 'zh',
-                    reviewIntervals: { hardMin: 10, fuzzyHr: 4, easyStages: [1, 3, 7, 15, 30] },
-                    spellMode: 'random', reminderEnabled: false, reminderTime: '09:00',
-                    selectedVoiceURI: 'auto', soundEnabled: true, autoReadOnReview: false };
-                if (!appData.settings.reviewIntervals) appData.settings.reviewIntervals = { hardMin: 10, fuzzyHr: 4,
-                    easyStages: [1, 3, 7, 15, 30] };
+                if (!appData.stats) appData.stats = { checkIns: [], todayNewCount: 0, todayReviewCount: 0, todayCorrect: 0, todayTotal: 0, streak: 0, dailyNewGoal: 10 };
+                if (!appData.settings) appData.settings = { darkMode: false, fontSize: 36, lang: 'zh', reviewIntervals: { hardMin: 10, fuzzyHr: 4, easyStages: [1, 3, 7, 15, 30] }, spellMode: 'random', reminderEnabled: false, reminderTime: '09:00', selectedVoiceURI: 'auto', soundEnabled: true, autoReadOnReview: false };
+                if (!appData.settings.reviewIntervals) appData.settings.reviewIntervals = { hardMin: 10, fuzzyHr: 4, easyStages: [1, 3, 7, 15, 30] };
                 if (!appData.settings.spellMode) appData.settings.spellMode = 'random';
                 if (appData.settings.reminderEnabled === undefined) appData.settings.reminderEnabled = false;
                 if (!appData.settings.reminderTime) appData.settings.reminderTime = '09:00';
@@ -1824,74 +1856,45 @@
         function initDefault() {
             appData = {
                 books: [{
-                    id: 'default',
-                    name: '默认单词本',
-                    groups: [{ id: 'g1', name: '基础词汇' }],
+                    id: 'default', name: '默认单词本', groups: [{ id: 'g1', name: '基础词汇' }],
                     words: [
-                        { id: 1, korean: '사랑', chinese: '爱情', pos: '名词', example: '사랑해요',
-                            nextReview: Date.now(), reviewCount: 0, mastered: false, wrongCount: 0,
-                            tags: [], groupId: 'g1' },
-                        { id: 2, korean: '공부', chinese: '学习', pos: '名词', example: '열심히 공부하세요',
-                            nextReview: Date.now(), reviewCount: 0, mastered: false, wrongCount: 0,
-                            tags: [], groupId: 'g1' },
-                        { id: 3, korean: '안녕하세요', chinese: '你好', pos: '感叹词',
-                            example: '안녕하세요, 반갑습니다', nextReview: Date.now(), reviewCount: 0,
-                            mastered: false, wrongCount: 0, tags: [], groupId: null }
+                        { id: 1, korean: '사랑', chinese: '爱情', pos: '名词', example: '사랑해요', nextReview: Date.now(), reviewCount: 0, mastered: false, wrongCount: 0, tags: [], groupId: 'g1' },
+                        { id: 2, korean: '공부', chinese: '学习', pos: '名词', example: '열심히 공부하세요', nextReview: Date.now(), reviewCount: 0, mastered: false, wrongCount: 0, tags: [], groupId: 'g1' },
+                        { id: 3, korean: '안녕하세요', chinese: '你好', pos: '感叹词', example: '안녕하세요, 반갑습니다', nextReview: Date.now(), reviewCount: 0, mastered: false, wrongCount: 0, tags: [], groupId: null }
                     ]
                 }],
-                activeBookId: 'default',
-                showMastered: false,
-                wordListCollapsed: false,
-                collapsedGroups: {},
-                multiSelectMode: false,
-                selectedWordIds: {},
-                reviewGroupFilter: '__all__',
-                spellFilter: 'todayNew',
-                spellAutoNextMs: 1800,
-                todayLearnedDate: getTodayStr(),
-                todayLearnedIds: [],
-                goalReachedNotified: false,
-                stats: { checkIns: [], todayNewCount: 0, todayReviewCount: 0, todayCorrect: 0, todayTotal: 0,
-                    streak: 0, dailyNewGoal: 10 },
-                settings: { darkMode: false, fontSize: 36, lang: 'zh',
-                    reviewIntervals: { hardMin: 10, fuzzyHr: 4, easyStages: [1, 3, 7, 15, 30] },
-                    spellMode: 'random', reminderEnabled: false, reminderTime: '09:00',
-                    selectedVoiceURI: 'auto', soundEnabled: true, autoReadOnReview: false }
+                activeBookId: 'default', showMastered: false, wordListCollapsed: false, collapsedGroups: {},
+                multiSelectMode: false, selectedWordIds: {}, reviewGroupFilter: '__all__', spellFilter: 'todayNew', spellAutoNextMs: 1800,
+                todayLearnedDate: getTodayStr(), todayLearnedIds: [], goalReachedNotified: false,
+                stats: { checkIns: [], todayNewCount: 0, todayReviewCount: 0, todayCorrect: 0, todayTotal: 0, streak: 0, dailyNewGoal: 10 },
+                settings: { darkMode: false, fontSize: 36, lang: 'zh', reviewIntervals: { hardMin: 10, fuzzyHr: 4, easyStages: [1, 3, 7, 15, 30] }, spellMode: 'random', reminderEnabled: false, reminderTime: '09:00', selectedVoiceURI: 'auto', soundEnabled: true, autoReadOnReview: false }
             };
             saveData();
         }
 
         function getActiveBook() { return appData.books.find(b => b.id === appData.activeBookId) || appData.books[0]; }
-
-        function getWords(bookId) { if (bookId) { let b = appData.books.find(b => b.id === bookId); return b ? b.words :
-                []; } return getActiveBook().words; }
-
+        function getWords(bookId) { if (bookId) { let b = appData.books.find(b => b.id === bookId); return b ? b.words : []; } return getActiveBook().words; }
         function getReviewIntervals() {
             let ri = appData.settings.reviewIntervals;
-            return { hardMs: (ri.hardMin || 10) * 60 * 1000, fuzzyMs: (ri.fuzzyHr || 4) * 60 * 60 * 1000,
-                easyStages: ri.easyStages && ri.easyStages.length ? ri.easyStages : [1, 3, 7, 15, 30] };
+            return { hardMs: (ri.hardMin || 10) * 60 * 1000, fuzzyMs: (ri.fuzzyHr || 4) * 60 * 60 * 1000, easyStages: ri.easyStages && ri.easyStages.length ? ri.easyStages : [1, 3, 7, 15, 30] };
         }
-
         function guessPOS(korean) {
             if (!korean) return '';
             if (korean.endsWith('하다') || korean.endsWith('되다')) return '动词';
             if (korean.endsWith('이다')) return '动词';
             if (korean.endsWith('있다') || korean.endsWith('없다')) return '形容词';
-            if (korean.endsWith('다') && korean.length > 2 && !korean.endsWith('하다') && !korean.endsWith('되다'))
-        return '动词/形容词';
+            if (korean.endsWith('다') && korean.length > 2 && !korean.endsWith('하다') && !korean.endsWith('되다')) return '动词/形容词';
             if (korean.endsWith('히') || korean.endsWith('게')) return '副词';
             if (korean.endsWith('적')) return '名词';
             if (korean.endsWith('님') || korean.endsWith('씨')) return '名词';
             return '名词';
         }
 
-        // ============ 翻译函数 ============
         async function translateKoreanToChinese(text) {
             if (!text || !text.trim()) return null;
             const trimmed = text.trim();
             try {
-                const gUrl =
-                    `https://translate.googleapis.com/translate_a/single?client=gtx&sl=ko&tl=zh-CN&dt=t&dj=1&q=${encodeURIComponent(trimmed)}`;
+                const gUrl = `https://translate.googleapis.com/translate_a/single?client=gtx&sl=ko&tl=zh-CN&dt=t&dj=1&q=${encodeURIComponent(trimmed)}`;
                 const controller = new AbortController();
                 const timeoutId = setTimeout(() => controller.abort(), 8000);
                 const response = await fetch(gUrl, { signal: controller.signal });
@@ -1911,8 +1914,7 @@
                 }
             } catch (e) {}
             try {
-                const gUrl2 =
-                    `https://translate.googleapis.com/translate_a/single?client=gtx&sl=ko&tl=zh-CN&dt=t&q=${encodeURIComponent(trimmed)}`;
+                const gUrl2 = `https://translate.googleapis.com/translate_a/single?client=gtx&sl=ko&tl=zh-CN&dt=t&q=${encodeURIComponent(trimmed)}`;
                 const controller2 = new AbortController();
                 const timeoutId2 = setTimeout(() => controller2.abort(), 6000);
                 const response2 = await fetch(gUrl2, { signal: controller2.signal });
@@ -1927,8 +1929,7 @@
                 }
             } catch (e) {}
             try {
-                const mUrl =
-                    `https://api.mymemory.translated.net/get?q=${encodeURIComponent(trimmed)}&langpair=ko|zh-CN`;
+                const mUrl = `https://api.mymemory.translated.net/get?q=${encodeURIComponent(trimmed)}&langpair=ko|zh-CN`;
                 const controller3 = new AbortController();
                 const timeoutId3 = setTimeout(() => controller3.abort(), 8000);
                 const response3 = await fetch(mUrl, { signal: controller3.signal });
@@ -1952,41 +1953,29 @@
             const statusEl = document.getElementById('translateStatus');
             const btnEl = document.getElementById('btnTranslate');
             const kr = krInput.value.trim();
-            if (!kr) { statusEl.textContent = '⚠️ 请先输入韩语单词';
-                statusEl.className = 'translate-status-text error'; return; }
+            if (!kr) { statusEl.textContent = '⚠️ 请先输入韩语单词'; statusEl.className = 'translate-status-text error'; return; }
             const hasKorean = /[\uAC00-\uD7AF\u1100-\u11FF\u3130-\u318F]/.test(kr);
-            if (!hasKorean) { statusEl.textContent = '⚠️ 未检测到韩文字符';
-                statusEl.className = 'translate-status-text error'; return; }
+            if (!hasKorean) { statusEl.textContent = '⚠️ 未检测到韩文字符'; statusEl.className = 'translate-status-text error'; return; }
             const currentRequestId = ++translateRequestId;
             statusEl.textContent = '⏳ 正在翻译...';
             statusEl.className = 'translate-status-text';
-            if (btnEl) { btnEl.classList.add('loading');
-                btnEl.innerHTML =
-                    '<svg width="13" height="13" viewBox="0 0 24 24" style="stroke:currentColor;fill:none;"><use href="#icon-translate"/></svg> ⏳'; }
+            if (btnEl) { btnEl.classList.add('loading'); btnEl.innerHTML = '<svg width="13" height="13" viewBox="0 0 24 24" style="stroke:currentColor;fill:none;"><use href="#icon-translate"/></svg> ⏳'; }
             const translated = await translateKoreanToChinese(kr);
             if (currentRequestId !== translateRequestId) return;
-            if (btnEl) { btnEl.classList.remove('loading');
-                btnEl.innerHTML =
-                    '<svg width="13" height="13" viewBox="0 0 24 24" style="stroke:currentColor;fill:none;"><use href="#icon-translate"/></svg> 翻译'; }
+            if (btnEl) { btnEl.classList.remove('loading'); btnEl.innerHTML = '<svg width="13" height="13" viewBox="0 0 24 24" style="stroke:currentColor;fill:none;"><use href="#icon-translate"/></svg> 翻译'; }
             if (translated) {
-                if (!zhInput.value.trim() || confirm('中文释义已有内容，是否覆盖为翻译结果？\n\n翻译：' + translated)) { zhInput
-                    .value = translated; }
+                if (!zhInput.value.trim() || confirm('中文释义已有内容，是否覆盖为翻译结果？\n\n翻译：' + translated)) { zhInput.value = translated; }
                 const guessedPOS = guessPOS(kr);
-                if (guessedPOS && (!posInput.value.trim() || confirm('词性已有内容，是否覆盖为推测结果？\n\n推测词性：' +
-                        guessedPOS))) { posInput.value = guessedPOS; }
+                if (guessedPOS && (!posInput.value.trim() || confirm('词性已有内容，是否覆盖为推测结果？\n\n推测词性：' + guessedPOS))) { posInput.value = guessedPOS; }
                 statusEl.textContent = '✅ 翻译完成：' + translated;
                 statusEl.className = 'translate-status-text success';
                 playSoundEffect('add');
             } else {
                 const guessedPOS = guessPOS(kr);
-                if (guessedPOS && !posInput.value.trim()) { posInput.value = guessedPOS;
-                    statusEl.textContent = '⚠️ 翻译失败，已自动推测词性：' + guessedPOS; } else { statusEl.textContent =
-                        '❌ 翻译失败，请检查网络或手动输入'; }
+                if (guessedPOS && !posInput.value.trim()) { posInput.value = guessedPOS; statusEl.textContent = '⚠️ 翻译失败，已自动推测词性：' + guessedPOS; } else { statusEl.textContent = '❌ 翻译失败，请检查网络或手动输入'; }
                 statusEl.className = 'translate-status-text error';
             }
-            setTimeout(() => { if (statusEl.className.includes('success') || statusEl.className.includes('error')) { statusEl
-                    .textContent = '';
-                    statusEl.className = 'translate-status-text'; } }, 4000);
+            setTimeout(() => { if (statusEl.className.includes('success') || statusEl.className.includes('error')) { statusEl.textContent = ''; statusEl.className = 'translate-status-text'; } }, 4000);
         }
 
         async function translateDetailKorean() {
@@ -1996,40 +1985,29 @@
             const statusEl = document.getElementById('detailTranslateStatus');
             const btnEl = document.getElementById('btnDetailTranslate');
             const kr = (detailKoreanEl.innerText || detailKoreanEl.textContent || '').trim();
-            if (!kr) { statusEl.textContent = '⚠️ 请先输入韩语单词';
-                statusEl.className = 'detail-translate-status error'; return; }
+            if (!kr) { statusEl.textContent = '⚠️ 请先输入韩语单词'; statusEl.className = 'detail-translate-status error'; return; }
             const hasKorean = /[\uAC00-\uD7AF\u1100-\u11FF\u3130-\u318F]/.test(kr);
-            if (!hasKorean) { statusEl.textContent = '⚠️ 未检测到韩文字符';
-                statusEl.className = 'detail-translate-status error'; return; }
+            if (!hasKorean) { statusEl.textContent = '⚠️ 未检测到韩文字符'; statusEl.className = 'detail-translate-status error'; return; }
             const currentRequestId = ++detailTranslateRequestId;
             statusEl.textContent = '⏳ 正在翻译...';
             statusEl.className = 'detail-translate-status';
-            if (btnEl) { btnEl.classList.add('loading');
-                btnEl.textContent = '⏳'; }
+            if (btnEl) { btnEl.classList.add('loading'); btnEl.textContent = '⏳'; }
             const translated = await translateKoreanToChinese(kr);
             if (currentRequestId !== detailTranslateRequestId) return;
-            if (btnEl) { btnEl.classList.remove('loading');
-                btnEl.innerHTML =
-                    '<svg width="13" height="13" viewBox="0 0 24 24" style="stroke:currentColor;fill:none;"><use href="#icon-translate"/></svg> 翻译'; }
+            if (btnEl) { btnEl.classList.remove('loading'); btnEl.innerHTML = '<svg width="13" height="13" viewBox="0 0 24 24" style="stroke:currentColor;fill:none;"><use href="#icon-translate"/></svg> 翻译'; }
             if (translated) {
-                if (!editChineseEl.value.trim() || confirm('释义已有内容，是否覆盖为翻译结果？\n\n翻译：' + translated)) {
-                    editChineseEl.value = translated; }
+                if (!editChineseEl.value.trim() || confirm('释义已有内容，是否覆盖为翻译结果？\n\n翻译：' + translated)) { editChineseEl.value = translated; }
                 const guessedPOS = guessPOS(kr);
-                if (guessedPOS && (!editPOSEl.value.trim() || confirm('词性已有内容，是否覆盖为推测结果？\n\n推测词性：' +
-                        guessedPOS))) { editPOSEl.value = guessedPOS; }
+                if (guessedPOS && (!editPOSEl.value.trim() || confirm('词性已有内容，是否覆盖为推测结果？\n\n推测词性：' + guessedPOS))) { editPOSEl.value = guessedPOS; }
                 statusEl.textContent = '✅ 翻译完成：' + translated;
                 statusEl.className = 'detail-translate-status success';
                 playSoundEffect('add');
             } else {
                 const guessedPOS = guessPOS(kr);
-                if (guessedPOS && !editPOSEl.value.trim()) { editPOSEl.value = guessedPOS;
-                    statusEl.textContent = '⚠️ 翻译失败，已自动推测词性：' + guessedPOS; } else { statusEl.textContent =
-                        '❌ 翻译失败，请检查网络或手动输入'; }
+                if (guessedPOS && !editPOSEl.value.trim()) { editPOSEl.value = guessedPOS; statusEl.textContent = '⚠️ 翻译失败，已自动推测词性：' + guessedPOS; } else { statusEl.textContent = '❌ 翻译失败，请检查网络或手动输入'; }
                 statusEl.className = 'detail-translate-status error';
             }
-            setTimeout(() => { if (statusEl.className.includes('success') || statusEl.className.includes('error')) { statusEl
-                    .textContent = '';
-                    statusEl.className = 'detail-translate-status'; } }, 4000);
+            setTimeout(() => { if (statusEl.className.includes('success') || statusEl.className.includes('error')) { statusEl.textContent = ''; statusEl.className = 'detail-translate-status'; } }, 4000);
         }
 
         async function batchTranslateWords() {
@@ -2037,8 +2015,7 @@
             const statusEl = document.getElementById('batchTranslateStatus');
             const btnEl = document.getElementById('btnBatchTranslate');
             const text = textarea.value.trim();
-            if (!text) { statusEl.textContent = '⚠️ 请先输入待翻译的单词';
-                statusEl.className = 'batch-translate-status error'; return; }
+            if (!text) { statusEl.textContent = '⚠️ 请先输入待翻译的单词'; statusEl.className = 'batch-translate-status error'; return; }
             const lines = text.split('\n');
             const parsedLines = lines.map(line => {
                 const trimmed = line.trim();
@@ -2052,69 +2029,42 @@
                 return { original: line, kr, zh, rest, needsTranslation, parts };
             });
             const toTranslate = parsedLines.filter(l => l.needsTranslation);
-            if (toTranslate.length === 0) { statusEl.textContent = 'ℹ️ 所有行都已有释义或没有韩语，无需翻译';
-                statusEl.className = 'batch-translate-status'; return; }
+            if (toTranslate.length === 0) { statusEl.textContent = 'ℹ️ 所有行都已有释义或没有韩语，无需翻译'; statusEl.className = 'batch-translate-status'; return; }
             const currentRequestId = ++batchTranslateRequestId;
             statusEl.textContent = `⏳ 正在翻译 ${toTranslate.length} 个单词...`;
             statusEl.className = 'batch-translate-status';
-            if (btnEl) { btnEl.classList.add('loading');
-                btnEl.textContent = '⏳ 翻译中...'; }
-            let translatedCount = 0,
-                failedCount = 0;
+            if (btnEl) { btnEl.classList.add('loading'); btnEl.textContent = '⏳ 翻译中...'; }
+            let translatedCount = 0, failedCount = 0;
             for (let i = 0; i < toTranslate.length; i++) {
-                if (batchTranslateRequestId !== currentRequestId) { if (btnEl) { btnEl.classList.remove('loading');
-                        btnEl.innerHTML =
-                            '<svg width="14" height="14" viewBox="0 0 24 24" style="stroke:currentColor;fill:none;"><use href="#icon-translate"/></svg> 批量翻译'; } return; }
+                if (batchTranslateRequestId !== currentRequestId) { if (btnEl) { btnEl.classList.remove('loading'); btnEl.innerHTML = '<svg width="14" height="14" viewBox="0 0 24 24" style="stroke:currentColor;fill:none;"><use href="#icon-translate"/></svg> 批量翻译'; } return; }
                 const item = toTranslate[i];
                 statusEl.textContent = `⏳ 正在翻译 (${i+1}/${toTranslate.length})：${item.kr}`;
                 try {
                     const translated = await translateKoreanToChinese(item.kr);
-                    if (batchTranslateRequestId !== currentRequestId) { if (btnEl) { btnEl.classList.remove(
-                                'loading');
-                            btnEl.innerHTML =
-                                '<svg width="14" height="14" viewBox="0 0 24 24" style="stroke:currentColor;fill:none;"><use href="#icon-translate"/></svg> 批量翻译'; } return; }
-                    if (translated) { item.zh = translated;
-                        translatedCount++; } else { failedCount++; }
+                    if (batchTranslateRequestId !== currentRequestId) { if (btnEl) { btnEl.classList.remove('loading'); btnEl.innerHTML = '<svg width="14" height="14" viewBox="0 0 24 24" style="stroke:currentColor;fill:none;"><use href="#icon-translate"/></svg> 批量翻译'; } return; }
+                    if (translated) { item.zh = translated; translatedCount++; } else { failedCount++; }
                 } catch (e) { failedCount++; }
                 if (i < toTranslate.length - 1) { await new Promise(resolve => setTimeout(resolve, 500)); }
             }
-            const resultLines = parsedLines.map(l => { if (l.needsTranslation && l.zh) { const restPart = l.rest ?
-                        ',' + l.rest : ''; return l.kr + ',' + l.zh + restPart; } return l.original; });
+            const resultLines = parsedLines.map(l => { if (l.needsTranslation && l.zh) { const restPart = l.rest ? ',' + l.rest : ''; return l.kr + ',' + l.zh + restPart; } return l.original; });
             textarea.value = resultLines.join('\n');
-            if (btnEl) { btnEl.classList.remove('loading');
-                btnEl.innerHTML =
-                    '<svg width="14" height="14" viewBox="0 0 24 24" style="stroke:currentColor;fill:none;"><use href="#icon-translate"/></svg> 批量翻译'; }
-            if (translatedCount > 0 && failedCount === 0) { statusEl.textContent =
-                    `✅ 批量翻译完成！成功翻译 ${translatedCount} 个单词`;
-                statusEl.className = 'batch-translate-status success';
-                playSoundEffect('add'); } else if (translatedCount > 0 && failedCount > 0) { statusEl.textContent =
-                    `⚠️ 翻译完成：成功 ${translatedCount} 个，失败 ${failedCount} 个`;
-                statusEl.className = 'batch-translate-status error'; } else { statusEl.textContent =
-                    `❌ 翻译失败 ${failedCount} 个单词，请检查网络`;
-                statusEl.className = 'batch-translate-status error'; }
-            setTimeout(() => { if (statusEl.className.includes('success') || statusEl.className.includes('error')) { statusEl
-                    .textContent = '';
-                    statusEl.className = 'batch-translate-status'; } }, 5000);
+            if (btnEl) { btnEl.classList.remove('loading'); btnEl.innerHTML = '<svg width="14" height="14" viewBox="0 0 24 24" style="stroke:currentColor;fill:none;"><use href="#icon-translate"/></svg> 批量翻译'; }
+            if (translatedCount > 0 && failedCount === 0) { statusEl.textContent = `✅ 批量翻译完成！成功翻译 ${translatedCount} 个单词`; statusEl.className = 'batch-translate-status success'; playSoundEffect('add'); } else if (translatedCount > 0 && failedCount > 0) { statusEl.textContent = `⚠️ 翻译完成：成功 ${translatedCount} 个，失败 ${failedCount} 个`; statusEl.className = 'batch-translate-status error'; } else { statusEl.textContent = `❌ 翻译失败 ${failedCount} 个单词，请检查网络`; statusEl.className = 'batch-translate-status error'; }
+            setTimeout(() => { if (statusEl.className.includes('success') || statusEl.className.includes('error')) { statusEl.textContent = ''; statusEl.className = 'batch-translate-status'; } }, 5000);
         }
 
         function setupAutoTranslateOnBlur() {
             const krInput = document.getElementById('inputKorean');
             const zhInput = document.getElementById('inputChinese');
             if (!krInput) return;
-            krInput.addEventListener('blur', () => { const kr = krInput.value.trim(),
-                    zh = zhInput.value.trim(); if (kr && !zh && /[\uAC00-\uD7AF\u1100-\u11FF\u3130-\u318F]/.test(
-                    kr)) { triggerAutoTranslate(); } });
-            krInput.addEventListener('keydown', (e) => { if (e.key === 'Enter' && krInput.value.trim()) { e
-                    .preventDefault();
-                    triggerAutoTranslate(); } });
+            krInput.addEventListener('blur', () => { const kr = krInput.value.trim(), zh = zhInput.value.trim(); if (kr && !zh && /[\uAC00-\uD7AF\u1100-\u11FF\u3130-\u318F]/.test(kr)) { triggerAutoTranslate(); } });
+            krInput.addEventListener('keydown', (e) => { if (e.key === 'Enter' && krInput.value.trim()) { e.preventDefault(); triggerAutoTranslate(); } });
         }
 
-        // ============ 语音加载 ============
         function loadVoices() {
             return new Promise(r => {
                 let voices = speechSynth.getVoices();
-                if (voices.length) { updateVoiceList(voices);
-                    r(); } else {
+                if (voices.length) { updateVoiceList(voices); r(); } else {
                     speechSynth.onvoiceschanged = () => {
                         voices = speechSynth.getVoices();
                         updateVoiceList(voices);
@@ -2122,14 +2072,11 @@
                     };
                     setTimeout(() => {
                         voices = speechSynth.getVoices();
-                        if (voices.length) { updateVoiceList(voices);
-                            r(); } else { updateVoiceList([]);
-                            r(); }
+                        if (voices.length) { updateVoiceList(voices); r(); } else { updateVoiceList([]); r(); }
                     }, 2000);
                 }
             });
         }
-
         function updateVoiceList(voices) {
             allKoreanVoices = voices.filter(v => v.lang.startsWith('ko'));
             let sel = document.getElementById('voiceSelect');
@@ -2137,90 +2084,55 @@
             let countInfo = document.getElementById('voiceCountInfo');
             if (!sel) return;
             sel.innerHTML = '<option value="auto">自动选择 (浏览器默认)</option>';
-            sel.innerHTML +=
-                `<option value="${GOOGLE_TTS_URI}" ${appData.settings.selectedVoiceURI===GOOGLE_TTS_URI?'selected':''}>🌐 Google TTS (在线·推荐) <span class="voice-quality-badge voice-quality-online">在线</span></option>`;
+            sel.innerHTML += `<option value="${GOOGLE_TTS_URI}" ${appData.settings.selectedVoiceURI===GOOGLE_TTS_URI?'selected':''}>🌐 Google TTS (在线·推荐) <span class="voice-quality-badge voice-quality-online">在线</span></option>`;
             if (allKoreanVoices.length === 0) {
                 sel.innerHTML += '<option value="auto" disabled>— 未检测到本地韩语发音人 —</option>';
                 if (hint) hint.style.display = 'block';
                 if (countInfo) countInfo.textContent = '本地: 0个';
             } else {
-                allKoreanVoices.forEach((v, idx) => {
+                allKoreanVoices.forEach((v) => {
                     const isLocal = v.localService !== false;
                     const qualityLabel = isLocal ? '本地' : '网络';
                     const qualityClass = isLocal ? 'voice-quality-local' : 'voice-quality-online';
-                    sel.innerHTML +=
-                        `<option value="${escapeHTML(v.voiceURI)}" ${appData.settings.selectedVoiceURI===v.voiceURI?'selected':''}>🔊 ${escapeHTML(v.name)} <span class="voice-quality-badge ${qualityClass}">${qualityLabel}</span> ${isLocal?'':'🌐'}</option>`;
+                    sel.innerHTML += `<option value="${escapeHTML(v.voiceURI)}" ${appData.settings.selectedVoiceURI===v.voiceURI?'selected':''}>🔊 ${escapeHTML(v.name)} <span class="voice-quality-badge ${qualityClass}">${qualityLabel}</span> ${isLocal?'':'🌐'}</option>`;
                 });
                 if (hint) hint.style.display = 'none';
                 if (countInfo) countInfo.textContent = `本地: ${allKoreanVoices.length}个`;
             }
             selectVoice(appData.settings.selectedVoiceURI);
         }
-
         function refreshVoices() {
             const voices = speechSynth.getVoices();
             updateVoiceList(voices);
             if (speechSynth.onvoiceschanged) { speechSynth.onvoiceschanged(); }
             playSoundEffect('click');
             const countInfo = document.getElementById('voiceCountInfo');
-            if (countInfo) {
-                countInfo.textContent = `已刷新 · 本地: ${allKoreanVoices.length}个`;
-                setTimeout(() => { if (countInfo) countInfo.textContent = `本地: ${allKoreanVoices.length}个`; }, 2000);
-            }
+            if (countInfo) { countInfo.textContent = `已刷新 · 本地: ${allKoreanVoices.length}个`; setTimeout(() => { if (countInfo) countInfo.textContent = `本地: ${allKoreanVoices.length}个`; }, 2000); }
         }
-
         function selectVoice(uri) {
             appData.settings.selectedVoiceURI = uri;
             scheduleSave();
-            if (uri === GOOGLE_TTS_URI) {
-                koreanVoice = allKoreanVoices.length ? allKoreanVoices[0] : null;
-            } else if (uri === 'auto' || !allKoreanVoices.length) {
-                koreanVoice = allKoreanVoices.length ? allKoreanVoices[0] : null;
-            } else {
-                koreanVoice = allKoreanVoices.find(v => v.voiceURI === uri) || allKoreanVoices[0] || null;
-            }
+            if (uri === GOOGLE_TTS_URI) { koreanVoice = allKoreanVoices.length ? allKoreanVoices[0] : null; } else if (uri === 'auto' || !allKoreanVoices.length) { koreanVoice = allKoreanVoices.length ? allKoreanVoices[0] : null; } else { koreanVoice = allKoreanVoices.find(v => v.voiceURI === uri) || allKoreanVoices[0] || null; }
             let hint = document.getElementById('voiceHint');
-            if (hint) {
-                if (isGoogleTTS()) { hint.style.display = 'none'; } else { hint.style.display = allKoreanVoices
-                        .length === 0 ? 'block' : 'none'; }
-            }
+            if (hint) { if (isGoogleTTS()) { hint.style.display = 'none'; } else { hint.style.display = allKoreanVoices.length === 0 ? 'block' : 'none'; } }
             let sel = document.getElementById('voiceSelect');
             if (sel) sel.value = uri;
         }
-
-        function speak(text, rate) { if (!text) return; if (isGoogleTTS()) { speakWithGoogleTTS(text, rate); } else {
-                speakWithBrowserTTS(text, rate); } }
-
+        function speak(text, rate) { if (!text) return; if (isGoogleTTS()) { speakWithGoogleTTS(text, rate); } else { speakWithBrowserTTS(text, rate); } }
         function speakCurrentWord(e) { if (e) e.stopPropagation(); if (currentWord) speak(currentWord.korean); }
-
         function speakSpellWord() { if (spellWord) speak(spellWord.korean); }
-
-        function speakExample(e) { if (e) e.stopPropagation(); if (currentWord && currentWord.example) { speak(currentWord
-                .example); } }
-
-        function speakEditExample(e) { if (e) e.stopPropagation();
-            const exInput = document.getElementById('editExample'); if (exInput && exInput.value.trim()) { speak(exInput.value
-                    .trim()); } }
-
+        function speakExample(e) { if (e) e.stopPropagation(); if (currentWord && currentWord.example) { speak(currentWord.example); } }
+        function speakEditExample(e) { if (e) e.stopPropagation(); const exInput = document.getElementById('editExample'); if (exInput && exInput.value.trim()) { speak(exInput.value.trim()); } }
         function speakWordFromList(e, word) { if (e) e.stopPropagation(); if (word && word.korean) speak(word.korean); }
+        function setSpeed(speed, btn) { currentSpeed = speed; document.querySelectorAll('.speed-btn').forEach(b => b.classList.remove('active')); if (btn) btn.classList.add('active'); }
+        function setFilter(f, btn) { reviewFilter = f; document.querySelectorAll('#reviewPage .filter-btn').forEach(b => b.classList.remove('active')); if (btn) btn.classList.add('active'); refreshReview(); }
 
-        function setSpeed(speed, btn) { currentSpeed = speed;
-            document.querySelectorAll('.speed-btn').forEach(b => b.classList.remove('active')); if (btn) btn.classList.add(
-                'active'); }
-
-        function setFilter(f, btn) { reviewFilter = f;
-            document.querySelectorAll('#reviewPage .filter-btn').forEach(b => b.classList.remove('active')); if (btn) btn
-                .classList.add('active');
-            refreshReview(); }
-
-        // ============ 学习页面分组筛选 ============
         function onReviewGroupChange() {
             const sel = document.getElementById('reviewGroupSelect');
             appData.reviewGroupFilter = sel.value;
             scheduleSave();
             refreshReview();
         }
-
         function updateReviewGroupSelector() {
             const sel = document.getElementById('reviewGroupSelect');
             const book = getActiveBook();
@@ -2228,14 +2140,12 @@
             let html = '<option value="__all__">📚 全部单词本</option>';
             groups.forEach(g => {
                 const count = book.words.filter(w => w.groupId === g.id && !w.mastered).length;
-                html +=
-                    `<option value="${escapeHTML(g.id)}" ${appData.reviewGroupFilter===g.id?'selected':''}>📁 ${escapeHTML(g.name)} (${count}词)</option>`;
+                html += `<option value="${escapeHTML(g.id)}" ${appData.reviewGroupFilter===g.id?'selected':''}>📁 ${escapeHTML(g.name)} (${count}词)</option>`;
             });
             sel.innerHTML = html;
             sel.value = appData.reviewGroupFilter || '__all__';
             updateReviewLearnedCountDisplay();
         }
-
         function updateReviewLearnedCountDisplay() {
             const el = document.getElementById('reviewLearnedCount');
             if (el) {
@@ -2243,16 +2153,9 @@
                 const goal = appData.stats.dailyNewGoal || 10;
                 const learned = appData.stats.todayNewCount || 0;
                 el.textContent = `📖 已学 ${learned} / ${goal} 个`;
-                if (learned >= goal && goal > 0) {
-                    el.style.color = '#5f9b7a';
-                    el.style.fontWeight = '700';
-                } else {
-                    el.style.color = '#b5a0b5';
-                    el.style.fontWeight = '400';
-                }
+                if (learned >= goal && goal > 0) { el.style.color = '#5f9b7a'; el.style.fontWeight = '700'; } else { el.style.color = '#b5a0b5'; el.style.fontWeight = '400'; }
             }
         }
-
         function showGoalReachedToast() {
             const goal = appData.stats.dailyNewGoal || 10;
             const toast = document.createElement('div');
@@ -2261,7 +2164,6 @@
             document.body.appendChild(toast);
             setTimeout(() => { if (toast.parentNode) toast.parentNode.removeChild(toast); }, 3000);
         }
-
         function checkGoalReached() {
             checkAndResetToday();
             const goal = appData.stats.dailyNewGoal || 10;
@@ -2273,34 +2175,41 @@
             }
         }
 
-        let currentWord = null,
-            cardFlipped = false;
-        let touchStartX = 0,
-            touchStartY = 0;
+        let currentWord = null, cardFlipped = false;
+        let touchStartX = 0, touchStartY = 0;
         let swipeThreshold = 40;
 
         function getFilteredWords() {
             let words = getWords().filter(w => !w.mastered);
-            // 分组筛选
             if (appData.reviewGroupFilter && appData.reviewGroupFilter !== '__all__') {
                 words = words.filter(w => w.groupId === appData.reviewGroupFilter);
             }
             if (reviewFilter === 'new') words = words.filter(w => w.reviewCount === 0);
             else if (reviewFilter === 'wrong') words = words.filter(w => w.wrongCount > 0);
-            else if (reviewFilter === 'topik') words = words.filter(w => w.tags && w.tags.some(t => t.includes(
-                'TOPIK')));
+            else if (reviewFilter === 'topik') words = words.filter(w => w.tags && w.tags.some(t => t.includes('TOPIK')));
             return words.filter(w => w.nextReview <= Date.now());
         }
 
         function refreshReview() {
             updateReviewGroupSelector();
             let due = getFilteredWords();
-            if (!due.length) { document.getElementById('emptyReview').style.display = 'block';
+            if (!due.length) {
+                document.getElementById('emptyReview').style.display = 'block';
                 document.getElementById('flipCard').style.display = 'none';
                 document.getElementById('actionButtons').style.display = 'none';
-                document.getElementById('reviewProgress').innerText = '🎉 暂无待复习单词';
+                document.getElementById('reviewProgress').innerText = '✨ 没有待复习的单词啦';
                 document.getElementById('swipeHint').style.display = 'none';
-                currentWord = null; return; }
+                const emptyDiv = document.getElementById('emptyReview');
+                emptyDiv.innerHTML = `
+                    <div class="empty-review-cute">
+                        <div class="cute-icon">🐱</div>
+                        <div class="cute-text">오늘도 수고했어요!</div>
+                        <div class="cute-sub">今天也辛苦啦，休息一下吧~</div>
+                        <div class="cute-sub">单词们正在路上，明天再来见它们吧 💕</div>
+                    </div>`;
+                currentWord = null;
+                return;
+            }
             document.getElementById('emptyReview').style.display = 'none';
             document.getElementById('flipCard').style.display = 'block';
             document.getElementById('actionButtons').style.display = 'flex';
@@ -2314,15 +2223,9 @@
             let exampleText = currentWord.example || '';
             document.getElementById('backExample').innerText = exampleText;
             let btnSpeakExample = document.getElementById('btnSpeakExample');
-            if (exampleText && btnSpeakExample) { btnSpeakExample.style.display = 'inline-flex'; } else if (
-            btnSpeakExample) { btnSpeakExample.style.display = 'none'; }
+            if (exampleText && btnSpeakExample) { btnSpeakExample.style.display = 'inline-flex'; } else if (btnSpeakExample) { btnSpeakExample.style.display = 'none'; }
             let conjBox = document.getElementById('backConjugation');
-            if (currentWord.pos === '动词' || currentWord.pos === '形容词') { let stem = currentWord.korean.endsWith(
-                    '다') ? currentWord.korean.slice(0, -1) : currentWord.korean;
-                conjBox.style.display = 'block';
-                conjBox.innerHTML =
-                    `活用：${escapeHTML(stem)}아/어요 | ${escapeHTML(stem)}았/었어요 | 안 ${escapeHTML(currentWord.korean)}`; } else conjBox
-                .style.display = 'none';
+            if (currentWord.pos === '动词' || currentWord.pos === '形容词') { let stem = currentWord.korean.endsWith('다') ? currentWord.korean.slice(0, -1) : currentWord.korean; conjBox.style.display = 'block'; conjBox.innerHTML = `活用：${escapeHTML(stem)}아/어요 | ${escapeHTML(stem)}았/었어요 | 안 ${escapeHTML(currentWord.korean)}`; } else conjBox.style.display = 'none';
             document.getElementById('reviewProgress').innerText = `📌 待复习 ${due.length} 个`;
             updateSwipeThreshold();
             updateReviewLearnedCountDisplay();
@@ -2330,108 +2233,45 @@
                 setTimeout(() => speak(currentWord.korean), 350);
             }
         }
-
-        function updateSwipeThreshold() { let card = document.getElementById('flipCard'); if (card) { swipeThreshold = Math
-                .max(30, card.offsetWidth * 0.2); } }
-
-        function flipCard() { if (!currentWord) return;
-            document.getElementById('flipCard').classList.toggle('flipped');
-            cardFlipped = !cardFlipped;
-            playSoundEffect('flip');
-            if (!cardFlipped && appData.settings.autoReadOnReview && currentWord && currentWord.korean) {
-                speak(currentWord.korean); } }
-
+        function updateSwipeThreshold() { let card = document.getElementById('flipCard'); if (card) { swipeThreshold = Math.max(30, card.offsetWidth * 0.2); } }
+        function flipCard() { if (!currentWord) return; document.getElementById('flipCard').classList.toggle('flipped'); cardFlipped = !cardFlipped; playSoundEffect('flip'); if (!cardFlipped && appData.settings.autoReadOnReview && currentWord && currentWord.korean) { speak(currentWord.korean); } }
         function markWord(type) {
             if (!currentWord) return;
             let w = getActiveBook().words.find(w => w.id === currentWord.id);
             if (!w) return;
-            let now = Date.now(),
-                intervals = getReviewIntervals();
+            let now = Date.now(), intervals = getReviewIntervals();
             appData.stats.todayReviewCount++;
             appData.stats.todayTotal++;
-            if (w.reviewCount === 0) {
-                appData.stats.todayNewCount++;
-                recordTodayLearned(w.id);
-            }
-            if (type === 'hard') { w.nextReview = now + intervals.hardMs;
-                w.wrongCount++;
-                playSoundEffect('error'); } else if (type === 'fuzzy') { w.nextReview = now + intervals.fuzzyMs;
-                playSoundEffect('mark'); } else { let stages = intervals.easyStages,
-                    stage = Math.min(w.reviewCount, stages.length - 1);
-                w.nextReview = now + stages[stage] * 24 * 60 * 60 * 1000; if (stage === stages.length - 1) w.mastered =
-                    true;
-                w.reviewCount++;
-                appData.stats.todayCorrect++;
-                playSoundEffect('correct'); }
+            if (w.reviewCount === 0) { appData.stats.todayNewCount++; recordTodayLearned(w.id); }
+            if (type === 'hard') { w.nextReview = now + intervals.hardMs; w.wrongCount++; playSoundEffect('error'); } else if (type === 'fuzzy') { w.nextReview = now + intervals.fuzzyMs; playSoundEffect('mark'); } else { let stages = intervals.easyStages, stage = Math.min(w.reviewCount, stages.length - 1); w.nextReview = now + stages[stage] * 24 * 60 * 60 * 1000; if (stage === stages.length - 1) w.mastered = true; w.reviewCount++; appData.stats.todayCorrect++; playSoundEffect('correct'); }
             scheduleSave();
             refreshReview();
             updateStats();
             checkGoalReached();
         }
-
         function initSwipe() {
             let card = document.getElementById('flipCard');
-            card.addEventListener('touchstart', e => { if (!currentWord) return;
-                touchStartX = e.touches[0].clientX;
-                touchStartY = e.touches[0].clientY;
-                updateSwipeThreshold(); }, { passive: true });
-            card.addEventListener('touchend', e => { if (!currentWord) return;
-                let dx = e.changedTouches[0].clientX - touchStartX,
-                    dy = e.changedTouches[0].clientY - touchStartY; if (Math.abs(dx) < swipeThreshold && Math.abs(
-                        dy) < swipeThreshold) return; if (Math.abs(dy) > Math.abs(dx)) { if (dy < -
-                        swipeThreshold) flipCard(); } else { if (dx < -swipeThreshold) markWord('hard');
-                    else if (dx > swipeThreshold) markWord('easy'); } });
+            card.addEventListener('touchstart', e => { if (!currentWord) return; touchStartX = e.touches[0].clientX; touchStartY = e.touches[0].clientY; updateSwipeThreshold(); }, { passive: true });
+            card.addEventListener('touchend', e => { if (!currentWord) return; let dx = e.changedTouches[0].clientX - touchStartX, dy = e.changedTouches[0].clientY - touchStartY; if (Math.abs(dx) < swipeThreshold && Math.abs(dy) < swipeThreshold) return; if (Math.abs(dy) > Math.abs(dx)) { if (dy < -swipeThreshold) flipCard(); } else { if (dx < -swipeThreshold) markWord('hard'); else if (dx > swipeThreshold) markWord('easy'); } });
         }
-
         function initKeyboard() {
-            document.addEventListener('keydown', e => { if (!document.getElementById('reviewPage').classList.contains(
-                        'active') || !currentWord) return; if (e.target.tagName === 'INPUT' || e.target.tagName ===
-                    'TEXTAREA' || e.target.isContentEditable) return;
-                switch (e.key) {
-                    case 'ArrowLeft':
-                    case 'a':
-                        e.preventDefault();
-                        markWord('hard');
-                        break;
-                    case 'ArrowRight':
-                    case 'd':
-                        e.preventDefault();
-                        markWord('easy');
-                        break;
-                    case 'ArrowDown':
-                    case 's':
-                        e.preventDefault();
-                        markWord('fuzzy');
-                        break;
-                    case 'ArrowUp':
-                    case 'w':
-                    case ' ':
-                        e.preventDefault();
-                        flipCard();
-                        break;
-                } });
+            document.addEventListener('keydown', e => { if (!document.getElementById('reviewPage').classList.contains('active') || !currentWord) return; if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA' || e.target.isContentEditable) return; switch (e.key) { case 'ArrowLeft': case 'a': e.preventDefault(); markWord('hard'); break; case 'ArrowRight': case 'd': e.preventDefault(); markWord('easy'); break; case 'ArrowDown': case 's': e.preventDefault(); markWord('fuzzy'); break; case 'ArrowUp': case 'w': case ' ': e.preventDefault(); flipCard(); break; } });
         }
 
-        // ============ 拼写页面 ============
-        let spellWord = null,
-            spellList = [],
-            spellErrorList = [];
+        let spellWord = null, spellList = [], spellErrorList = [];
         let spellCheckedCurrent = false;
+
+        function isSpellActive() {
+            return spellWord || spellList.length > 0 || spellErrorList.length > 0;
+        }
 
         function getSpellWords() {
             const book = getActiveBook();
             let words;
             if (appData.spellFilter === 'todayNew') {
                 words = getTodayLearnedWords();
-                if (words.length === 0) {
-                    // 今天没有新学单词，回退到全部未掌握单词
-                    words = book.words.filter(w => !w.mastered);
-                }
-            } else if (appData.spellFilter === 'wrong') {
-                words = book.words.filter(w => w.wrongCount > 0 && !w.mastered);
-            } else {
-                words = book.words.filter(w => !w.mastered);
-            }
+                if (words.length === 0) { words = book.words.filter(w => !w.mastered); }
+            } else if (appData.spellFilter === 'wrong') { words = book.words.filter(w => w.wrongCount > 0 && !w.mastered); } else { words = book.words.filter(w => !w.mastered); }
             return words;
         }
 
@@ -2452,6 +2292,7 @@
             if (!spellList.length) {
                 document.getElementById('spellProgress').innerText = '没有可练习的单词';
                 document.getElementById('spellChinese').innerText = '';
+                document.getElementById('spellPosBadge').style.display = 'none';
                 document.getElementById('spellInput').value = '';
                 document.getElementById('spellFeedback').innerHTML = '';
                 document.getElementById('spellCorrection').innerHTML = '';
@@ -2459,6 +2300,34 @@
                 return;
             }
             nextSpellWord();
+        }
+
+        function restoreSpellUI() {
+            if (!spellWord && !spellList.length && !spellErrorList.length) {
+                startSpell();
+                return;
+            }
+            if (spellWord) {
+                document.getElementById('spellChinese').innerText = spellWord.chinese;
+                const posBadge = document.getElementById('spellPosBadge');
+                if (spellWord.pos) {
+                    posBadge.innerText = spellWord.pos;
+                    posBadge.style.display = 'inline-block';
+                } else {
+                    posBadge.style.display = 'none';
+                }
+                document.getElementById('spellInput').value = '';
+                document.getElementById('spellFeedback').innerHTML = '';
+                document.getElementById('spellCorrection').innerHTML = '';
+                if (spellCheckedCurrent) {
+                    document.getElementById('spellCheckBtn').disabled = true;
+                    document.getElementById('spellCheckBtn').style.opacity = '0.6';
+                } else {
+                    document.getElementById('spellCheckBtn').disabled = false;
+                    document.getElementById('spellCheckBtn').style.opacity = '1';
+                }
+            }
+            document.getElementById('spellProgress').innerText = `📝 剩余 ${spellList.length+(spellWord?1:0)+(spellErrorList.length)} 个 | ${appData.settings.spellMode==='random'?'随机':'顺序'}`;
         }
 
         function resetSpell() {
@@ -2472,19 +2341,12 @@
             startSpell();
         }
 
-        function clearSpellAutoNext() { if (spellAutoNextTimer) { clearTimeout(spellAutoNextTimer);
-                spellAutoNextTimer = null; } }
+        function clearSpellAutoNext() { if (spellAutoNextTimer) { clearTimeout(spellAutoNextTimer); spellAutoNextTimer = null; } }
 
-        function getSpellAutoNextMs() {
-            return appData.spellAutoNextMs || 1800;
-        }
-
+        function getSpellAutoNextMs() { return appData.spellAutoNextMs || 1800; }
         function setSpellAutoNextSec(val) {
             const sec = parseFloat(val);
-            if (!isNaN(sec) && sec >= 0.3 && sec <= 10) {
-                appData.spellAutoNextMs = Math.round(sec * 1000);
-                scheduleSave();
-            }
+            if (!isNaN(sec) && sec >= 0.3 && sec <= 10) { appData.spellAutoNextMs = Math.round(sec * 1000); scheduleSave(); }
             updateSettingsDisplay();
         }
 
@@ -2501,6 +2363,7 @@
                 } else {
                     document.getElementById('spellProgress').innerText = '🎉 拼写完成！点击「重新拼写」再来一轮';
                     document.getElementById('spellChinese').innerText = '';
+                    document.getElementById('spellPosBadge').style.display = 'none';
                     document.getElementById('spellInput').value = '';
                     document.getElementById('spellFeedback').innerHTML = '';
                     document.getElementById('spellCorrection').innerHTML = '';
@@ -2510,11 +2373,17 @@
             }
             spellWord = spellList.shift();
             document.getElementById('spellChinese').innerText = spellWord.chinese;
+            const posBadge = document.getElementById('spellPosBadge');
+            if (spellWord.pos) {
+                posBadge.innerText = spellWord.pos;
+                posBadge.style.display = 'inline-block';
+            } else {
+                posBadge.style.display = 'none';
+            }
             document.getElementById('spellInput').value = '';
             document.getElementById('spellFeedback').innerHTML = '';
             document.getElementById('spellCorrection').innerHTML = '';
-            document.getElementById('spellProgress').innerText =
-                `📝 剩余 ${spellList.length+1+(spellErrorList.length?spellErrorList.length:0)} 个 | ${appData.settings.spellMode==='random'?'随机':'顺序'} | ${appData.spellFilter==='todayNew'?'今天新学':appData.spellFilter==='wrong'?'易错':'全部'}`;
+            document.getElementById('spellProgress').innerText = `📝 剩余 ${spellList.length+1+(spellErrorList.length?spellErrorList.length:0)} 个 | ${appData.settings.spellMode==='random'?'随机':'顺序'} | ${appData.spellFilter==='todayNew'?'今天新学':appData.spellFilter==='wrong'?'易错':'全部'}`;
             document.getElementById('spellCheckBtn').disabled = false;
             document.getElementById('spellCheckBtn').style.opacity = '1';
             setTimeout(() => document.getElementById('spellInput').focus(), 150);
@@ -2528,9 +2397,11 @@
             document.getElementById('spellCheckBtn').disabled = true;
             document.getElementById('spellCheckBtn').style.opacity = '0.6';
             clearSpellAutoNext();
-            let normalizedInput = input.normalize('NFC');
-            let normalizedCorrect = spellWord.korean.normalize('NFC');
-            if (normalizedInput === normalizedCorrect) {
+
+            const cleanInput = extractKoreanOnly(input.normalize('NFC'));
+            const cleanCorrect = extractKoreanOnly(spellWord.korean.normalize('NFC'));
+
+            if (cleanInput === cleanCorrect) {
                 document.getElementById('spellFeedback').innerHTML = '<span class="correct">✅ 正确！</span>';
                 document.getElementById('spellCorrection').innerHTML = '';
                 appData.stats.todayCorrect++;
@@ -2542,29 +2413,21 @@
                 const autoNextMs = getSpellAutoNextMs();
                 spellAutoNextTimer = setTimeout(() => { nextSpellWord(); }, autoNextMs);
             } else {
-                let hint = getCorrectionHint(input, spellWord.korean);
-                document.getElementById('spellFeedback').innerHTML =
-                    `<span class="incorrect">❌ 错误！正确：<b>${escapeHTML(spellWord.korean)}</b></span>`;
-                document.getElementById('spellCorrection').innerHTML = hint ? '💡 提示：' + escapeHTML(hint) : '';
+                document.getElementById('spellFeedback').innerHTML = `<span class="incorrect">❌ 错误！正确：<b>${escapeHTML(spellWord.korean)}</b></span>`;
+                document.getElementById('spellCorrection').innerHTML = '';
                 spellErrorList.push(spellWord);
                 appData.stats.todayTotal++;
                 appData.stats.todayReviewCount++;
                 scheduleSave();
                 updateStats();
-                playSoundEffect('error');
+                playSoundEffect('cuteError');
             }
         }
 
         function skipSpellWord() {
             if (!spellWord) return;
             clearSpellAutoNext();
-            if (!spellCheckedCurrent) {
-                spellErrorList.push(spellWord);
-                appData.stats.todayTotal++;
-                appData.stats.todayReviewCount++;
-                scheduleSave();
-                updateStats();
-            }
+            if (!spellCheckedCurrent) { spellErrorList.push(spellWord); appData.stats.todayTotal++; appData.stats.todayReviewCount++; scheduleSave(); updateStats(); }
             spellCheckedCurrent = false;
             document.getElementById('spellFeedback').innerHTML = '';
             document.getElementById('spellCorrection').innerHTML = '';
@@ -2584,23 +2447,8 @@
             startSpell();
         }
 
-        function getCorrectionHint(input, correct) {
-            let hints = [];
-            const similar = { 'ㄱ': ['ㅋ'], 'ㄷ': ['ㅌ'], 'ㅂ': ['ㅃ'], 'ㅅ': ['ㅆ'], 'ㅈ': ['ㅊ'], 'ㅏ': ['ㅑ'], 'ㅓ': ['ㅕ'],
-                'ㅗ': ['ㅛ'], 'ㅜ': ['ㅠ'] };
-            for (let i = 0; i < Math.min(input.length, correct.length); i++) {
-                if (input[i] !== correct[i] && similar[correct[i]] && similar[correct[i]].includes(input[i])) hints
-                    .push(`第${i+1}个字母"${input[i]}"可能是"${correct[i]}"`);
-            }
-            return hints.join('；');
-        }
-
-        // ============ 词库页 ============
         function updateBookDisplay() { document.getElementById('currentBookName').innerText = getActiveBook().name; }
-
-        function openBookList() { renderBookListPopup();
-            document.getElementById('bookListPopup').style.display = 'flex'; }
-
+        function openBookList() { renderBookListPopup(); document.getElementById('bookListPopup').style.display = 'flex'; }
         function renderBookListPopup() {
             document.getElementById('bookListContainer').innerHTML = appData.books.map((b, idx) => `
                 <div style="padding:10px;background:${b.id===appData.activeBookId?'#feeef4':'#fef9fb'};margin:4px 0;border-radius:12px;display:flex;justify-content:space-between;align-items:center;gap:4px;flex-wrap:wrap;">
@@ -2614,7 +2462,6 @@
                     </div>
                 </div>`).join('');
         }
-
         function copyBook(id) {
             const srcBook = appData.books.find(b => b.id === id);
             if (!srcBook) return;
@@ -2622,19 +2469,8 @@
             const newBook = JSON.parse(JSON.stringify(srcBook));
             newBook.id = 'b' + Date.now();
             newBook.name = srcBook.name + ' (副本)';
-            // 更新所有单词ID和group引用
-            const oldIdMap = {};
-            newBook.words.forEach(w => {
-                const oldId = w.id;
-                w.id = Date.now() + Math.random();
-                oldIdMap[oldId] = w.id;
-            });
-            if (newBook.groups) {
-                newBook.groups.forEach(g => {
-                    const oldGid = g.id;
-                    g.id = 'g' + Date.now() + Math.random();
-                });
-            }
+            newBook.words.forEach(w => { w.id = Date.now() + Math.random(); });
+            if (newBook.groups) { newBook.groups.forEach(g => { g.id = 'g' + Date.now() + Math.random(); }); }
             appData.books.push(newBook);
             saveData();
             updateBookDisplay();
@@ -2643,55 +2479,13 @@
             playSoundEffect('add');
             alert(`✅ 已复制单词本：「${newBook.name}」`);
         }
-
-        function closeBookList(e) { if (e.target === document.getElementById('bookListPopup')) document.getElementById(
-                'bookListPopup').style.display = 'none'; }
-
+        function closeBookList(e) { if (e.target === document.getElementById('bookListPopup')) document.getElementById('bookListPopup').style.display = 'none'; }
         function closeBookListDirect() { document.getElementById('bookListPopup').style.display = 'none'; }
-
-        function switchBook(id) { appData.activeBookId = id;
-            saveData();
-            updateBookDisplay();
-            renderWordList();
-            closeBookListDirect();
-            updateReviewGroupSelector(); if (currentActiveTab === 'review') refreshReview();
-            else if (currentActiveTab === 'spell') startSpell(); }
-
-        function renameBook(id) { let book = appData.books.find(b => b.id === id); if (!book) return;
-            let newName = prompt('重命名单词本：', book.name); if (newName && newName.trim()) { book.name = newName.trim();
-                saveData();
-                updateBookDisplay();
-                renderBookListPopup(); } }
-
-        function moveBook(id, dir) { let idx = appData.books.findIndex(b => b.id === id); if (idx < 0) return; if (dir ===
-                'up' && idx > 0)[appData.books[idx - 1], appData.books[idx]] = [appData.books[idx], appData.books[idx -
-                1]];
-            else if (dir === 'down' && idx < appData.books.length - 1)[appData.books[idx], appData.books[idx + 1]] = [
-                appData.books[idx + 1], appData.books[idx]
-            ];
-            saveData();
-            renderBookListPopup(); }
-
-        function createNewBook() { let name = document.getElementById('newBookName').value.trim(); if (!name) return;
-            let id = Date.now().toString();
-            appData.books.push({ id, name, groups: [], words: [] });
-            appData.activeBookId = id;
-            saveData();
-            updateBookDisplay();
-            renderWordList();
-            renderBookListPopup();
-            document.getElementById('newBookName').value = ''; }
-
-        function deleteBook(id) { if (appData.books.length <= 1) { alert('至少保留一个单词本'); return; } if (!confirm(
-                    '确定删除这个单词本吗？所有单词将被永久删除。')) return;
-            appData.books = appData.books.filter(b => b.id !== id); if (appData.activeBookId === id) appData.activeBookId =
-                appData.books[0].id;
-            saveData();
-            updateBookDisplay();
-            renderWordList();
-            renderBookListPopup(); if (currentActiveTab === 'review') refreshReview();
-            else if (currentActiveTab === 'spell') startSpell(); }
-
+        function switchBook(id) { appData.activeBookId = id; saveData(); updateBookDisplay(); renderWordList(); closeBookListDirect(); updateReviewGroupSelector(); if (currentActiveTab === 'review') refreshReview(); else if (currentActiveTab === 'spell') startSpell(); }
+        function renameBook(id) { let book = appData.books.find(b => b.id === id); if (!book) return; let newName = prompt('重命名单词本：', book.name); if (newName && newName.trim()) { book.name = newName.trim(); saveData(); updateBookDisplay(); renderBookListPopup(); } }
+        function moveBook(id, dir) { let idx = appData.books.findIndex(b => b.id === id); if (idx < 0) return; if (dir === 'up' && idx > 0)[appData.books[idx - 1], appData.books[idx]] = [appData.books[idx], appData.books[idx - 1]]; else if (dir === 'down' && idx < appData.books.length - 1)[appData.books[idx], appData.books[idx + 1]] = [appData.books[idx + 1], appData.books[idx]]; saveData(); renderBookListPopup(); }
+        function createNewBook() { let name = document.getElementById('newBookName').value.trim(); if (!name) return; let id = Date.now().toString(); appData.books.push({ id, name, groups: [], words: [] }); appData.activeBookId = id; saveData(); updateBookDisplay(); renderWordList(); renderBookListPopup(); document.getElementById('newBookName').value = ''; }
+        function deleteBook(id) { if (appData.books.length <= 1) { alert('至少保留一个单词本'); return; } if (!confirm('确定删除这个单词本吗？所有单词将被永久删除。')) return; appData.books = appData.books.filter(b => b.id !== id); if (appData.activeBookId === id) appData.activeBookId = appData.books[0].id; saveData(); updateBookDisplay(); renderWordList(); renderBookListPopup(); if (currentActiveTab === 'review') refreshReview(); else if (currentActiveTab === 'spell') startSpell(); }
         function populateGroupSelects() {
             const book = getActiveBook();
             const groups = book.groups || [];
@@ -2702,13 +2496,9 @@
                 const currentVal = sel.value;
                 const defaultLabel = sid === 'importGroupId' ? '默认：未分组' : '📁 分组 (未分组)';
                 sel.innerHTML = `<option value="">${defaultLabel}</option>`;
-                groups.forEach(g => {
-                    sel.innerHTML +=
-                        `<option value="${escapeHTML(g.id)}" ${currentVal===g.id?'selected':''}>📁 ${escapeHTML(g.name)}</option>`;
-                });
+                groups.forEach(g => { sel.innerHTML += `<option value="${escapeHTML(g.id)}" ${currentVal===g.id?'selected':''}>📁 ${escapeHTML(g.name)}</option>`; });
             });
         }
-
         function createNewGroup() {
             const name = prompt('请输入新分组名称：');
             if (!name || !name.trim()) return;
@@ -2723,7 +2513,6 @@
             updateReviewGroupSelector();
             playSoundEffect('add');
         }
-
         function createNewGroupForImport() {
             const name = prompt('请输入新分组名称：');
             if (!name || !name.trim()) return;
@@ -2738,14 +2527,7 @@
             updateReviewGroupSelector();
             playSoundEffect('add');
         }
-
-        function openGroupManager() {
-            const book = getActiveBook();
-            document.getElementById('gmBookName').innerText = book.name;
-            renderGroupManagerList();
-            document.getElementById('groupManagerPopup').style.display = 'flex';
-        }
-
+        function openGroupManager() { const book = getActiveBook(); document.getElementById('gmBookName').innerText = book.name; renderGroupManagerList(); document.getElementById('groupManagerPopup').style.display = 'flex'; }
         function renderGroupManagerList() {
             const book = getActiveBook();
             const groups = book.groups || [];
@@ -2765,7 +2547,6 @@
                 </div>`;
             }).join('') || '<p style="color:#b5a0b5;text-align:center;">暂无分组，请添加</p>';
         }
-
         function copyGroup(gid) {
             const book = getActiveBook();
             const srcGroup = (book.groups || []).find(g => g.id === gid);
@@ -2774,11 +2555,7 @@
             const newGroupId = 'g' + Date.now();
             book.groups.push({ id: newGroupId, name: srcGroup.name + ' (副本)' });
             const srcWords = book.words.filter(w => w.groupId === gid);
-            const newWords = srcWords.map(w => ({
-                ...JSON.parse(JSON.stringify(w)),
-                id: Date.now() + Math.random(),
-                groupId: newGroupId
-            }));
+            const newWords = srcWords.map(w => ({ ...JSON.parse(JSON.stringify(w)), id: Date.now() + Math.random(), groupId: newGroupId }));
             newWords.reverse().forEach(w => book.words.unshift(w));
             saveData();
             renderGroupManagerList();
@@ -2788,7 +2565,6 @@
             playSoundEffect('add');
             alert(`✅ 已复制分组「${srcGroup.name}」，包含 ${newWords.length} 个单词`);
         }
-
         function addNewGroup() {
             const nameInput = document.getElementById('newGroupNameInput');
             const name = nameInput.value.trim();
@@ -2804,34 +2580,25 @@
             updateReviewGroupSelector();
             playSoundEffect('add');
         }
-
         function renameGroup(gid) {
             const book = getActiveBook();
             const g = (book.groups || []).find(g => g.id === gid);
             if (!g) return;
             const newName = prompt('重命名分组：', g.name);
-            if (newName && newName.trim()) { g.name = newName.trim();
-                saveData();
-                renderGroupManagerList();
-                populateGroupSelects();
-                renderWordList();
-                updateReviewGroupSelector(); }
+            if (newName && newName.trim()) { g.name = newName.trim(); saveData(); renderGroupManagerList(); populateGroupSelects(); renderWordList(); updateReviewGroupSelector(); }
         }
-
         function moveGroup(gid, dir) {
             const book = getActiveBook();
             if (!book.groups) return;
             const idx = book.groups.findIndex(g => g.id === gid);
             if (idx < 0) return;
             if (dir === 'up' && idx > 0)[book.groups[idx - 1], book.groups[idx]] = [book.groups[idx], book.groups[idx - 1]];
-            else if (dir === 'down' && idx < book.groups.length - 1)[book.groups[idx], book.groups[idx + 1]] = [book.groups[
-                idx + 1], book.groups[idx]];
+            else if (dir === 'down' && idx < book.groups.length - 1)[book.groups[idx], book.groups[idx + 1]] = [book.groups[idx + 1], book.groups[idx]];
             saveData();
             renderGroupManagerList();
             populateGroupSelects();
             renderWordList();
         }
-
         function deleteGroupConfirm(gid) {
             if (!confirm('确定删除该分组吗？分组内的单词将变为"未分组"，不会被删除。')) return;
             const book = getActiveBook();
@@ -2844,23 +2611,17 @@
             updateReviewGroupSelector();
             playSoundEffect('click');
         }
-
-        function closeGroupManager(e) { if (e.target === document.getElementById('groupManagerPopup')) document.getElementById(
-                'groupManagerPopup').style.display = 'none'; }
-
+        function closeGroupManager(e) { if (e.target === document.getElementById('groupManagerPopup')) document.getElementById('groupManagerPopup').style.display = 'none'; }
         function closeGroupManagerDirect() { document.getElementById('groupManagerPopup').style.display = 'none'; }
 
         // ============ 多选模式 ============
         function toggleMultiSelect() {
             appData.multiSelectMode = !appData.multiSelectMode;
-            if (!appData.multiSelectMode) {
-                appData.selectedWordIds = {};
-            }
+            if (!appData.multiSelectMode) { appData.selectedWordIds = {}; }
             scheduleSave();
             updateMultiSelectUI();
             renderWordList();
         }
-
         function updateMultiSelectUI() {
             const btn = document.getElementById('btnMultiSelectToggle');
             const actions = document.getElementById('multiSelectActions');
@@ -2877,26 +2638,16 @@
             }
             updateSelectedCountDisplay();
         }
-
         function updateSelectedCountDisplay() {
             const el = document.getElementById('selectedCount');
-            if (el) {
-                const count = Object.keys(appData.selectedWordIds || {}).length;
-                el.textContent = count;
-            }
+            if (el) { const count = Object.keys(appData.selectedWordIds || {}).length; el.textContent = count; }
         }
-
         function toggleWordSelection(wordId, checkboxEl) {
             if (!appData.selectedWordIds) appData.selectedWordIds = {};
-            if (checkboxEl.checked) {
-                appData.selectedWordIds[wordId] = true;
-            } else {
-                delete appData.selectedWordIds[wordId];
-            }
+            if (checkboxEl.checked) { appData.selectedWordIds[wordId] = true; } else { delete appData.selectedWordIds[wordId]; }
             scheduleSave();
             updateSelectedCountDisplay();
         }
-
         function selectAllWords() {
             const book = getActiveBook();
             const words = appData.showMastered ? book.words.filter(w => w.mastered) : book.words.filter(w => !w.mastered);
@@ -2906,14 +2657,7 @@
             renderWordList();
             updateSelectedCountDisplay();
         }
-
-        function deselectAllWords() {
-            appData.selectedWordIds = {};
-            scheduleSave();
-            renderWordList();
-            updateSelectedCountDisplay();
-        }
-
+        function deselectAllWords() { appData.selectedWordIds = {}; scheduleSave(); renderWordList(); updateSelectedCountDisplay(); }
         function batchDeleteWords() {
             const selectedIds = Object.keys(appData.selectedWordIds || {});
             if (selectedIds.length === 0) { alert('请先选择要删除的单词'); return; }
@@ -2932,86 +2676,44 @@
             alert(`✅ 已删除 ${selectedIds.length} 个单词`);
         }
 
-        // ============ 词库单词列表 ============
-        function toggleWordList() {
-            appData.wordListCollapsed = !appData.wordListCollapsed;
-            saveData();
-            applyWordListCollapseState();
-        }
-
+        function toggleWordList() { appData.wordListCollapsed = !appData.wordListCollapsed; saveData(); applyWordListCollapseState(); }
         function applyWordListCollapseState() {
             const container = document.getElementById('wordListContainer');
             const icon = document.getElementById('wordListToggleIcon');
             const text = document.getElementById('wordListToggleText');
-            if (appData.wordListCollapsed) {
-                container.classList.add('collapsed');
-                if (icon) icon.innerText = '▸';
-                if (text) text.innerText = '展开单词列表';
-            } else {
-                container.classList.remove('collapsed');
-                if (icon) icon.innerText = '▾';
-                if (text) text.innerText = '折叠单词列表';
-            }
+            if (appData.wordListCollapsed) { container.classList.add('collapsed'); if (icon) icon.innerText = '▸'; if (text) text.innerText = '展开单词列表'; }
+            else { container.classList.remove('collapsed'); if (icon) icon.innerText = '▾'; if (text) text.innerText = '折叠单词列表'; }
             updateWordListCount();
         }
-
         function updateWordListCount() {
             const countEl = document.getElementById('wordListCount');
             if (countEl) {
                 const book = getActiveBook();
-                const visibleWords = appData.showMastered ? book.words.filter(w => w.mastered) : book.words.filter(w => !w
-                    .mastered);
+                const visibleWords = appData.showMastered ? book.words.filter(w => w.mastered) : book.words.filter(w => !w.mastered);
                 countEl.innerText = `(${visibleWords.length}个单词)`;
             }
         }
-
         function addWord() {
-            let kr = document.getElementById('inputKorean').value.trim(),
-                zh = document.getElementById('inputChinese').value.trim(),
-                pos = document.getElementById('inputPOS').value.trim(),
-                ex = document.getElementById('inputExample').value.trim(),
-                groupId = document.getElementById('inputGroup').value.trim() || null,
-                tagsStr = document.getElementById('inputTags').value.trim(),
-                tags = tagsStr ? tagsStr.split(/[,，]/).map(s => s.trim()).filter(s => s) : [];
+            let kr = document.getElementById('inputKorean').value.trim(), zh = document.getElementById('inputChinese').value.trim(), pos = document.getElementById('inputPOS').value.trim(), ex = document.getElementById('inputExample').value.trim(), groupId = document.getElementById('inputGroup').value.trim() || null, tagsStr = document.getElementById('inputTags').value.trim(), tags = tagsStr ? tagsStr.split(/[,，]/).map(s => s.trim()).filter(s => s) : [];
             if (!kr && !zh) { alert('请至少填写韩语单词或中文释义之一'); return; }
             let book = getActiveBook();
             if (kr && book.words.some(w => w.korean === kr)) { alert('该韩语单词已存在'); return; }
-            book.words.unshift({
-                id: Date.now(),
-                korean: kr,
-                chinese: zh,
-                pos,
-                example: ex,
-                nextReview: Date.now(),
-                reviewCount: 0,
-                mastered: false,
-                wrongCount: 0,
-                tags,
-                groupId: groupId || null
-            });
+            book.words.unshift({ id: Date.now(), korean: kr, chinese: zh, pos, example: ex, nextReview: Date.now(), reviewCount: 0, mastered: false, wrongCount: 0, tags, groupId: groupId || null });
             saveData();
             renderWordList();
             updateReviewGroupSelector();
-            ['inputKorean', 'inputChinese', 'inputPOS', 'inputExample', 'inputTags'].forEach(id => document.getElementById(
-                id).value = '');
+            ['inputKorean', 'inputChinese', 'inputPOS', 'inputExample', 'inputTags'].forEach(id => document.getElementById(id).value = '');
             document.getElementById('inputGroup').value = '';
             document.getElementById('translateStatus').textContent = '';
             document.getElementById('translateStatus').className = 'translate-status-text';
             updateStats();
             playSoundEffect('add');
         }
-
-        function getImportGroupId() {
-            const sel = document.getElementById('importGroupId');
-            return sel ? (sel.value.trim() || null) : null;
-        }
-
+        function getImportGroupId() { const sel = document.getElementById('importGroupId'); return sel ? (sel.value.trim() || null) : null; }
         function batchAddWords() {
             let text = document.getElementById('batchInput').value.trim();
             if (!text) return;
-            let lines = text.split('\n').filter(l => l.trim()),
-                book = getActiveBook(),
-                added = 0;
+            let lines = text.split('\n').filter(l => l.trim()), book = getActiveBook(), added = 0;
             const importGroupId = getImportGroupId();
             const newWords = [];
             lines.forEach(line => {
@@ -3020,19 +2722,7 @@
                 let zh = (parts[1] || '').trim();
                 if (!kr && !zh) return;
                 if (kr && book.words.some(w => w.korean === kr)) return;
-                newWords.push({
-                    id: Date.now() + Math.random(),
-                    korean: kr,
-                    chinese: zh,
-                    pos: (parts[2] || '').trim(),
-                    example: (parts[3] || '').trim(),
-                    nextReview: Date.now(),
-                    reviewCount: 0,
-                    mastered: false,
-                    wrongCount: 0,
-                    tags: [],
-                    groupId: importGroupId
-                });
+                newWords.push({ id: Date.now() + Math.random(), korean: kr, chinese: zh, pos: (parts[2] || '').trim(), example: (parts[3] || '').trim(), nextReview: Date.now(), reviewCount: 0, mastered: false, wrongCount: 0, tags: [], groupId: importGroupId });
                 added++;
             });
             newWords.reverse().forEach(w => book.words.unshift(w));
@@ -3045,16 +2735,13 @@
             const groupName = importGroupId ? ((book.groups || []).find(g => g.id === importGroupId) || {}).name || importGroupId : '未分组';
             alert(`批量导入完成，新增 ${added} 个单词，分组：${groupName}`);
         }
-
         function handleImport(event) {
             let file = event.target.files[0];
             if (!file) return;
             const importGroupId = getImportGroupId();
             let reader = new FileReader();
             reader.onload = function(e) {
-                let lines = e.target.result.split('\n').filter(l => l.trim()),
-                    book = getActiveBook(),
-                    importedCount = 0;
+                let lines = e.target.result.split('\n').filter(l => l.trim()), book = getActiveBook(), importedCount = 0;
                 const newWords = [];
                 lines.forEach(line => {
                     let parts = line.split(/[,\t]/);
@@ -3062,19 +2749,7 @@
                     let zh = (parts[1] || '').trim();
                     if (!kr && !zh) return;
                     if (kr && book.words.find(w => w.korean === kr)) return;
-                    newWords.push({
-                        id: Date.now() + Math.random(),
-                        korean: kr,
-                        chinese: zh,
-                        pos: (parts[2] || '').trim(),
-                        example: (parts[3] || '').trim(),
-                        nextReview: Date.now(),
-                        reviewCount: 0,
-                        mastered: false,
-                        wrongCount: 0,
-                        tags: [],
-                        groupId: importGroupId
-                    });
+                    newWords.push({ id: Date.now() + Math.random(), korean: kr, chinese: zh, pos: (parts[2] || '').trim(), example: (parts[3] || '').trim(), nextReview: Date.now(), reviewCount: 0, mastered: false, wrongCount: 0, tags: [], groupId: importGroupId });
                     importedCount++;
                 });
                 newWords.reverse().forEach(w => book.words.unshift(w));
@@ -3088,33 +2763,17 @@
             reader.readAsText(file);
             event.target.value = '';
         }
-
         function exportBook() {
-            let book = getActiveBook(),
-                csv = '韩文,释义,词性,例句\n';
+            let book = getActiveBook(), csv = '韩文,释义,词性,例句\n';
             book.words.forEach(w => csv += `${w.korean},${w.chinese},${w.pos||''},${w.example||''}\n`);
-            let blob = new Blob([csv], { type: 'text/csv;charset=utf-8' }),
-                url = URL.createObjectURL(blob),
-                a = document.createElement('a');
-            a.href = url;
-            a.download = `${book.name}.csv`;
-            a.click();
-            URL.revokeObjectURL(url);
+            let blob = new Blob([csv], { type: 'text/csv;charset=utf-8' }), url = URL.createObjectURL(blob), a = document.createElement('a');
+            a.href = url; a.download = `${book.name}.csv`; a.click(); URL.revokeObjectURL(url);
         }
-
         function exportAllData() {
-            let exportObj = { version: 'v10_optimized', exportedAt: new Date().toISOString(), data: JSON.parse(JSON.stringify(
-                    appData)) };
-            let jsonStr = JSON.stringify(exportObj, null, 2),
-                blob = new Blob([jsonStr], { type: 'application/json;charset=utf-8' }),
-                url = URL.createObjectURL(blob),
-                a = document.createElement('a');
-            a.href = url;
-            a.download = `korean-backup-${new Date().toISOString().slice(0,10)}.json`;
-            a.click();
-            URL.revokeObjectURL(url);
+            let exportObj = { version: 'v10_optimized', exportedAt: new Date().toISOString(), data: JSON.parse(JSON.stringify(appData)) };
+            let jsonStr = JSON.stringify(exportObj, null, 2), blob = new Blob([jsonStr], { type: 'application/json;charset=utf-8' }), url = URL.createObjectURL(blob), a = document.createElement('a');
+            a.href = url; a.download = `korean-backup-${new Date().toISOString().slice(0,10)}.json`; a.click(); URL.revokeObjectURL(url);
         }
-
         function handleImportJson(event) {
             let file = event.target.files[0];
             if (!file) return;
@@ -3126,15 +2785,9 @@
                     if (!importedData.books || !importedData.settings) { alert('❌ 无效的备份文件格式'); return; }
                     if (!confirm('⚠️ 导入将覆盖当前所有数据，确定继续吗？')) return;
                     appData = importedData;
-                    appData.books.forEach(b => {
-                        if (!b.groups) b.groups = [];
-                        b.words.forEach(w => { if (!w.tags) w.tags = []; if (w.roma) delete w.roma; if (w
-                                .groupId === undefined) w.groupId = null; });
-                    });
-                    if (!appData.stats) appData.stats = { checkIns: [], todayNewCount: 0, todayReviewCount: 0,
-                        todayCorrect: 0, todayTotal: 0, streak: 0, dailyNewGoal: 10 };
-                    if (!appData.settings.reviewIntervals) appData.settings.reviewIntervals = { hardMin: 10,
-                        fuzzyHr: 4, easyStages: [1, 3, 7, 15, 30] };
+                    appData.books.forEach(b => { if (!b.groups) b.groups = []; b.words.forEach(w => { if (!w.tags) w.tags = []; if (w.roma) delete w.roma; if (w.groupId === undefined) w.groupId = null; }); });
+                    if (!appData.stats) appData.stats = { checkIns: [], todayNewCount: 0, todayReviewCount: 0, todayCorrect: 0, todayTotal: 0, streak: 0, dailyNewGoal: 10 };
+                    if (!appData.settings.reviewIntervals) appData.settings.reviewIntervals = { hardMin: 10, fuzzyHr: 4, easyStages: [1, 3, 7, 15, 30] };
                     if (!appData.settings.spellMode) appData.settings.spellMode = 'random';
                     if (appData.settings.selectedVoiceURI === undefined) appData.settings.selectedVoiceURI = 'auto';
                     if (appData.settings.soundEnabled === undefined) appData.settings.soundEnabled = true;
@@ -3163,14 +2816,7 @@
             reader.readAsText(file);
             event.target.value = '';
         }
-
-        function toggleGroupCollapse(groupId) {
-            if (!appData.collapsedGroups) appData.collapsedGroups = {};
-            appData.collapsedGroups[groupId] = !appData.collapsedGroups[groupId];
-            scheduleSave();
-            renderWordList();
-        }
-
+        function toggleGroupCollapse(groupId) { if (!appData.collapsedGroups) appData.collapsedGroups = {}; appData.collapsedGroups[groupId] = !appData.collapsedGroups[groupId]; scheduleSave(); renderWordList(); }
         function renderWordList() {
             const book = getActiveBook();
             const groups = book.groups || [];
@@ -3178,21 +2824,12 @@
             updateWordListCount();
             applyWordListCollapseState();
             updateMultiSelectUI();
-
             const groupedWords = {};
             const ungroupedWords = [];
             groups.forEach(g => { groupedWords[g.id] = []; });
-            words.forEach(w => {
-                if (w.groupId && groupedWords[w.groupId] !== undefined) {
-                    groupedWords[w.groupId].push(w);
-                } else {
-                    ungroupedWords.push(w);
-                }
-            });
-
+            words.forEach(w => { if (w.groupId && groupedWords[w.groupId] !== undefined) { groupedWords[w.groupId].push(w); } else { ungroupedWords.push(w); } });
             const isMultiSelect = appData.multiSelectMode;
             const selectedIds = appData.selectedWordIds || {};
-
             function renderWordItem(w) {
                 let posBadgeHtml = w.pos ? `<span class="pos-badge-sm">${escapeHTML(w.pos)}</span>` : '';
                 let tagsHtml = (w.tags || []).map(t => `<span class="tag">${escapeHTML(t)}</span>`).join('');
@@ -3201,9 +2838,7 @@
                 let escapedKorean = escapeHTML(w.korean).replace(/'/g, "\\'");
                 const wid = String(w.id);
                 const isChecked = selectedIds[wid] ? 'checked' : '';
-                const checkboxHtml = isMultiSelect ?
-                    `<input type="checkbox" class="multi-select-checkbox" ${isChecked} onclick="event.stopPropagation();toggleWordSelection('${wid}', this)" title="选择">` :
-                    '';
+                const checkboxHtml = isMultiSelect ? `<input type="checkbox" class="multi-select-checkbox" ${isChecked} onclick="event.stopPropagation();toggleWordSelection('${wid}', this)" title="选择">` : '';
                 return `
                 <div class="word-row-item" draggable="true" ondragstart="dragWord(event,'${escapeHTML(wid)}')" onclick="${isMultiSelect?`event.stopPropagation();toggleWordSelection('${wid}', this.querySelector('.multi-select-checkbox'));this.querySelector('.multi-select-checkbox').checked=!this.querySelector('.multi-select-checkbox').checked;`:`showWordDetail('${escapeHTML(wid)}')`}">
                     ${checkboxHtml}
@@ -3220,93 +2855,47 @@
                     </div>
                 </div>`;
             }
-
             let html = '';
             groups.forEach(g => {
                 const gWords = groupedWords[g.id] || [];
                 const isCollapsed = appData.collapsedGroups && appData.collapsedGroups[g.id];
-                html +=
-                    `<div class="group-header${isCollapsed?' collapsed':''}" onclick="toggleGroupCollapse('${escapeHTML(g.id)}')">
+                html += `<div class="group-header${isCollapsed?' collapsed':''}" onclick="toggleGroupCollapse('${escapeHTML(g.id)}')">
                     <span><span class="group-arrow">▾</span> 📁 ${escapeHTML(g.name)} <span style="font-size:11px;color:#b5a0b5;font-weight:400;">(${gWords.length}词)</span></span>
                 </div>`;
-                html +=
-                    `<div class="group-words${isCollapsed?' collapsed':''}" id="group-words-${escapeHTML(g.id)}">${gWords.map(renderWordItem).join('') || '<div class="empty-message" style="padding:8px;">📭 该分组暂无单词</div>'}</div>`;
+                html += `<div class="group-words${isCollapsed?' collapsed':''}" id="group-words-${escapeHTML(g.id)}">${gWords.map(renderWordItem).join('') || '<div class="empty-message" style="padding:8px;">📭 该分组暂无单词</div>'}</div>`;
             });
-
             if (ungroupedWords.length > 0 || groups.length === 0) {
                 if (groups.length > 0) {
                     const isCollapsed = appData.collapsedGroups && appData.collapsedGroups['__ungrouped__'];
-                    html +=
-                        `<div class="group-header${isCollapsed?' collapsed':''}" onclick="toggleGroupCollapse('__ungrouped__')">
+                    html += `<div class="group-header${isCollapsed?' collapsed':''}" onclick="toggleGroupCollapse('__ungrouped__')">
                         <span><span class="group-arrow">▾</span> 📁 未分组 <span style="font-size:11px;color:#b5a0b5;font-weight:400;">(${ungroupedWords.length}词)</span></span>
                     </div>`;
-                    html +=
-                        `<div class="group-words${isCollapsed?' collapsed':''}" id="group-words-__ungrouped__">${ungroupedWords.map(renderWordItem).join('') || '<div class="empty-message" style="padding:8px;">📭 暂无单词</div>'}</div>`;
-                } else {
-                    html += ungroupedWords.map(renderWordItem).join('');
-                }
+                    html += `<div class="group-words${isCollapsed?' collapsed':''}" id="group-words-__ungrouped__">${ungroupedWords.map(renderWordItem).join('') || '<div class="empty-message" style="padding:8px;">📭 暂无单词</div>'}</div>`;
+                } else { html += ungroupedWords.map(renderWordItem).join(''); }
             }
-
             document.getElementById('wordListContainer').innerHTML = html || '<div class="empty-message">📭 暂无单词</div>';
             applyWordListCollapseState();
             populateGroupSelects();
             updateSelectedCountDisplay();
         }
-
-        function deleteWord(id) { if (!confirm('确定删除这个单词吗？此操作不可恢复。')) return;
-            getActiveBook().words = getActiveBook().words.filter(w => w.id != id);
-            saveData();
-            renderWordList();
-            updateReviewGroupSelector(); if (currentActiveTab === 'review') refreshReview();
-            else if (currentActiveTab === 'spell') startSpell(); }
-
+        function deleteWord(id) { if (!confirm('确定删除这个单词吗？此操作不可恢复。')) return; getActiveBook().words = getActiveBook().words.filter(w => w.id != id); saveData(); renderWordList(); updateReviewGroupSelector(); if (currentActiveTab === 'review') refreshReview(); else if (currentActiveTab === 'spell') startSpell(); }
         let draggedWordId = null;
-
         function dragWord(e, id) { draggedWordId = id; }
         document.addEventListener('DOMContentLoaded', () => {
             document.getElementById('wordListContainer').addEventListener('dragover', e => e.preventDefault());
             document.getElementById('wordListContainer').addEventListener('drop', e => {
                 e.preventDefault();
                 if (!draggedWordId) return;
-                let book = getActiveBook(),
-                    words = appData.showMastered ? book.words.filter(w => w.mastered) : book.words.filter(w => !w
-                        .mastered),
-                    target = e.target.closest('.word-row-item');
+                let book = getActiveBook(), words = appData.showMastered ? book.words.filter(w => w.mastered) : book.words.filter(w => !w.mastered), target = e.target.closest('.word-row-item');
                 if (!target) return;
                 let match = target.getAttribute('onclick')?.match(/'([^']+)'/);
                 if (!match) return;
-                let targetId = match[1],
-                    di = words.findIndex(w => String(w.id) === String(draggedWordId)),
-                    ti = words.findIndex(w => String(w.id) === String(targetId));
-                if (di > -1 && ti > -1 && di !== ti) { let moved = words.splice(di, 1)[0];
-                    words.splice(ti, 0, moved);
-                    let ms = book.words.filter(w => w.mastered),
-                        ums = appData.showMastered ? words : words;
-                    book.words = appData.showMastered ? [...ums, ...ms] : [...ums, ...ms];
-                    saveData();
-                    renderWordList(); }
+                let targetId = match[1], di = words.findIndex(w => String(w.id) === String(draggedWordId)), ti = words.findIndex(w => String(w.id) === String(targetId));
+                if (di > -1 && ti > -1 && di !== ti) { let moved = words.splice(di, 1)[0]; words.splice(ti, 0, moved); let ms = book.words.filter(w => w.mastered), ums = appData.showMastered ? words : words; book.words = appData.showMastered ? [...ums, ...ms] : [...ums, ...ms]; saveData(); renderWordList(); }
                 draggedWordId = null;
             });
         });
-
-        function showWordDetail(id) {
-            if (appData.multiSelectMode) return;
-            let w = getWords().find(w => String(w.id) === String(id));
-            if (!w) return;
-            editingWordId = id;
-            document.getElementById('detailKorean').innerText = w.korean;
-            document.getElementById('editChinese').value = w.chinese;
-            document.getElementById('editPOS').value = w.pos || '';
-            document.getElementById('editExample').value = w.example || '';
-            document.getElementById('editTags').value = (w.tags || []).join(',');
-            document.getElementById('detailTranslateStatus').textContent = '';
-            document.getElementById('detailTranslateStatus').className = 'detail-translate-status';
-            populateGroupSelects();
-            document.getElementById('editGroup').value = w.groupId || '';
-            document.getElementById('wordDetailPopup').style.display = 'flex';
-            playSoundEffect('click');
-        }
-
+        function showWordDetail(id) { if (appData.multiSelectMode) return; let w = getWords().find(w => String(w.id) === String(id)); if (!w) return; editingWordId = id; document.getElementById('detailKorean').innerText = w.korean; document.getElementById('editChinese').value = w.chinese; document.getElementById('editPOS').value = w.pos || ''; document.getElementById('editExample').value = w.example || ''; document.getElementById('editTags').value = (w.tags || []).join(','); document.getElementById('detailTranslateStatus').textContent = ''; document.getElementById('detailTranslateStatus').className = 'detail-translate-status'; populateGroupSelects(); document.getElementById('editGroup').value = w.groupId || ''; document.getElementById('wordDetailPopup').style.display = 'flex'; playSoundEffect('click'); }
         function saveWordEdit() {
             if (!editingWordId) return;
             let w = getWords().find(w => String(w.id) === String(editingWordId));
@@ -3324,241 +2913,68 @@
             if (currentActiveTab === 'review') refreshReview();
             else if (currentActiveTab === 'spell') startSpell();
         }
-
-        function closeWordDetail(e) { if (e.target === document.getElementById('wordDetailPopup')) document.getElementById(
-                'wordDetailPopup').style.display = 'none'; }
-
-        function closeWordDetailDirect() { document.getElementById('wordDetailPopup').style.display = 'none';
-            editingWordId = null; }
-
-        function toggleMasteredView() { appData.showMastered = !appData.showMastered;
-            renderWordList(); }
-
-        function openSearch() { document.getElementById('searchPopup').style.display = 'flex';
-            document.getElementById('searchInput').focus(); }
-
-        function closeSearch(e) { if (e.target === document.getElementById('searchPopup')) document.getElementById(
-                'searchPopup').style.display = 'none'; }
-
+        function closeWordDetail(e) { if (e.target === document.getElementById('wordDetailPopup')) document.getElementById('wordDetailPopup').style.display = 'none'; }
+        function closeWordDetailDirect() { document.getElementById('wordDetailPopup').style.display = 'none'; editingWordId = null; }
+        function toggleMasteredView() { appData.showMastered = !appData.showMastered; renderWordList(); }
+        function openSearch() { document.getElementById('searchPopup').style.display = 'flex'; document.getElementById('searchInput').focus(); }
+        function closeSearch(e) { if (e.target === document.getElementById('searchPopup')) document.getElementById('searchPopup').style.display = 'none'; }
         function closeSearchDirect() { document.getElementById('searchPopup').style.display = 'none'; }
-
-        function doSearch() { let q = document.getElementById('searchInput').value.trim().toLowerCase(),
-                results = [];
-            appData.books.forEach(b => b.words.forEach(w => { if (w.korean.includes(q) || w.chinese.includes(q)) results
-                    .push({ ...w, bookName: b.name }); }));
-            document.getElementById('searchResults').innerHTML = results.slice(0, 50).map(r => `
-                <div style="padding:8px;background:#f9f9f9;margin:4px 0;border-radius:8px;cursor:pointer;" onclick="closeSearchDirect();showWordDetail('${escapeHTML(String(r.id))}')"><b>${escapeHTML(r.korean)}</b> - ${escapeHTML(r.chinese)} <span style="color:#888;">[${escapeHTML(r.bookName)}]</span></div>
-            `).join('') || '<p style="color:#b5a0b5;">无结果</p>'; }
-
-        function updateStats() {
-            let s = appData.stats;
-            document.getElementById('statNew').innerText = s.todayNewCount;
-            document.getElementById('statReview').innerText = s.todayReviewCount;
-            document.getElementById('statCorrect').innerText = s.todayTotal ? Math.round((s.todayCorrect / s
-                .todayTotal) * 100) + '%' : '0%';
-            document.getElementById('statStreak').innerText = s.streak;
-            renderCalendar();
-            renderEbbinghausCurve();
-            updateSettingsDisplay();
-            updateReviewLearnedCountDisplay();
-        }
-
+        function doSearch() { let q = document.getElementById('searchInput').value.trim().toLowerCase(), results = []; appData.books.forEach(b => b.words.forEach(w => { if (w.korean.includes(q) || w.chinese.includes(q)) results.push({ ...w, bookName: b.name }); })); document.getElementById('searchResults').innerHTML = results.slice(0, 50).map(r => `<div style="padding:8px;background:#f9f9f9;margin:4px 0;border-radius:8px;cursor:pointer;" onclick="closeSearchDirect();showWordDetail('${escapeHTML(String(r.id))}')"><b>${escapeHTML(r.korean)}</b> - ${escapeHTML(r.chinese)} <span style="color:#888;">[${escapeHTML(r.bookName)}]</span></div>`).join('') || '<p style="color:#b5a0b5;">无结果</p>'; }
+        function updateStats() { let s = appData.stats; document.getElementById('statNew').innerText = s.todayNewCount; document.getElementById('statReview').innerText = s.todayReviewCount; document.getElementById('statCorrect').innerText = s.todayTotal ? Math.round((s.todayCorrect / s.todayTotal) * 100) + '%' : '0%'; document.getElementById('statStreak').innerText = s.streak; renderCalendar(); renderEbbinghausCurve(); updateSettingsDisplay(); updateReviewLearnedCountDisplay(); }
         function updateSettingsDisplay() {
             let ri = appData.settings.reviewIntervals;
-            let setHardMin = document.getElementById('setHardMin'),
-                setFuzzyHr = document.getElementById('setFuzzyHr'),
-                setEasyStages = document.getElementById('setEasyStages'),
-                reminderTime = document.getElementById('reminderTime'),
-                reminderToggleBtn = document.getElementById('reminderToggleBtn'),
-                reminderStatus = document.getElementById('reminderStatus'),
-                dailyNewGoal = document.getElementById('dailyNewGoal'),
-                fontSizeInput = document.getElementById('fontSizeInput'),
-                spellModeToggle = document.getElementById('spellModeToggle'),
-                spellAutoNextSec = document.getElementById('spellAutoNextSec');
+            let setHardMin = document.getElementById('setHardMin'), setFuzzyHr = document.getElementById('setFuzzyHr'), setEasyStages = document.getElementById('setEasyStages'), reminderTime = document.getElementById('reminderTime'), reminderToggleBtn = document.getElementById('reminderToggleBtn'), reminderStatus = document.getElementById('reminderStatus'), dailyNewGoal = document.getElementById('dailyNewGoal'), fontSizeInput = document.getElementById('fontSizeInput'), spellModeToggle = document.getElementById('spellModeToggle'), spellAutoNextSec = document.getElementById('spellAutoNextSec');
             if (setHardMin) setHardMin.value = ri.hardMin || 10;
             if (setFuzzyHr) setFuzzyHr.value = ri.fuzzyHr || 4;
             if (setEasyStages) setEasyStages.value = (ri.easyStages || [1, 3, 7, 15, 30]).join(',');
             if (reminderTime) reminderTime.value = appData.settings.reminderTime || '09:00';
             if (reminderToggleBtn) reminderToggleBtn.innerText = appData.settings.reminderEnabled ? '🔔 关闭' : '🔔 开启';
-            if (reminderStatus) reminderStatus.innerText = appData.settings.reminderEnabled ?
-                `提醒已开启 · 每天 ${appData.settings.reminderTime}` : '提醒已关闭';
+            if (reminderStatus) reminderStatus.innerText = appData.settings.reminderEnabled ? `提醒已开启 · 每天 ${appData.settings.reminderTime}` : '提醒已关闭';
             if (dailyNewGoal) dailyNewGoal.value = appData.stats.dailyNewGoal;
             if (fontSizeInput) fontSizeInput.value = appData.settings.fontSize;
-            if (spellModeToggle) spellModeToggle.innerText = appData.settings.spellMode === 'random' ? '🔀 随机拼写' :
-                '📋 顺序拼写';
+            if (spellModeToggle) spellModeToggle.innerText = appData.settings.spellMode === 'random' ? '🔀 随机拼写' : '📋 顺序拼写';
             if (spellAutoNextSec) spellAutoNextSec.value = ((appData.spellAutoNextMs || 1800) / 1000).toFixed(1);
-            let soundToggleBtn = document.getElementById('soundToggleBtn'),
-                soundStatus = document.getElementById('soundStatus');
+            let soundToggleBtn = document.getElementById('soundToggleBtn'), soundStatus = document.getElementById('soundStatus');
             if (soundToggleBtn) { soundToggleBtn.innerText = appData.settings.soundEnabled ? '🔊 开启' : '🔇 关闭'; }
             if (soundStatus) { soundStatus.innerText = appData.settings.soundEnabled ? '音效已开启' : '音效已关闭'; }
-            let autoReadToggleBtn = document.getElementById('autoReadToggleBtn'),
-                autoReadStatus = document.getElementById('autoReadStatus');
+            let autoReadToggleBtn = document.getElementById('autoReadToggleBtn'), autoReadStatus = document.getElementById('autoReadStatus');
             if (autoReadToggleBtn) { autoReadToggleBtn.innerText = appData.settings.autoReadOnReview ? '🎙️ 开启' : '🔇 关闭'; }
             if (autoReadStatus) { autoReadStatus.innerText = appData.settings.autoReadOnReview ? '自动朗读已开启' : '自动朗读已关闭'; }
-            // 拼写筛选按钮状态
-            document.querySelectorAll('#spellFilterRow .filter-btn').forEach(b => {
-                b.classList.remove('active');
-                if (b.getAttribute('onclick')?.includes(`'${appData.spellFilter}'`)) b.classList.add('active');
-            });
+            document.querySelectorAll('#spellFilterRow .filter-btn').forEach(b => { b.classList.remove('active'); if (b.getAttribute('onclick')?.includes(`'${appData.spellFilter}'`)) b.classList.add('active'); });
         }
-
-        function saveReviewSettings() {
-            let hm = parseInt(document.getElementById('setHardMin')?.value) || 10;
-            let fh = parseInt(document.getElementById('setFuzzyHr')?.value) || 4;
-            let esStr = document.getElementById('setEasyStages')?.value?.trim() || '';
-            let es = esStr ? esStr.split(',').map(s => parseInt(s.trim())).filter(n => !isNaN(n) && n > 0) : [1, 3, 7,
-            15, 30];
-            if (!es.length) es = [1, 3, 7, 15, 30];
-            appData.settings.reviewIntervals = { hardMin: hm, fuzzyHr: fh, easyStages: es };
-            scheduleSave();
-        }
-
-        function saveReminderSettings() { let rt = document.getElementById('reminderTime'); if (rt) appData.settings
-                .reminderTime = rt.value || '09:00';
-            scheduleSave(); if (appData.settings.reminderEnabled) setupReminder();
-            updateSettingsDisplay(); }
-
-        function checkIn() { let today = new Date().toDateString(); if (!appData.stats.checkIns.includes(today)) { appData
-                .stats.checkIns.push(today);
-                appData.stats.streak = calcStreak(appData.stats.checkIns);
-                saveData();
-                updateStats();
-                playSoundEffect('correct');
-                alert('✅ 打卡成功！'); } else { alert('今天已打卡~'); } }
-
-        function calcStreak(dates) { if (!dates.length) return 0;
-            let sorted = dates.map(d => new Date(d)).sort((a, b) => a - b),
-                today = new Date();
-            today.setHours(0, 0, 0, 0);
-            let latest = new Date(sorted[sorted.length - 1]);
-            latest.setHours(0, 0, 0, 0); if (Math.round((today - latest) / 86400000) > 1) return 0;
-            let streak = 1,
-                max = 1; for (let i = 1; i < sorted.length; i++) { let diff = (sorted[i] - sorted[i - 1]) / 86400000; if (
-                    Math.round(diff) === 1) streak++;
-                else streak = 1;
-                max = Math.max(max, streak); } return max; }
-
+        function saveReviewSettings() { let hm = parseInt(document.getElementById('setHardMin')?.value) || 10; let fh = parseInt(document.getElementById('setFuzzyHr')?.value) || 4; let esStr = document.getElementById('setEasyStages')?.value?.trim() || ''; let es = esStr ? esStr.split(',').map(s => parseInt(s.trim())).filter(n => !isNaN(n) && n > 0) : [1, 3, 7, 15, 30]; if (!es.length) es = [1, 3, 7, 15, 30]; appData.settings.reviewIntervals = { hardMin: hm, fuzzyHr: fh, easyStages: es }; scheduleSave(); }
+        function saveReminderSettings() { let rt = document.getElementById('reminderTime'); if (rt) appData.settings.reminderTime = rt.value || '09:00'; scheduleSave(); if (appData.settings.reminderEnabled) setupReminder(); updateSettingsDisplay(); }
+        function checkIn() { let today = new Date().toDateString(); if (!appData.stats.checkIns.includes(today)) { appData.stats.checkIns.push(today); appData.stats.streak = calcStreak(appData.stats.checkIns); saveData(); updateStats(); playSoundEffect('correct'); alert('✅ 打卡成功！'); } else { alert('今天已打卡~'); } }
+        function calcStreak(dates) { if (!dates.length) return 0; let sorted = dates.map(d => new Date(d)).sort((a, b) => a - b), today = new Date(); today.setHours(0, 0, 0, 0); let latest = new Date(sorted[sorted.length - 1]); latest.setHours(0, 0, 0, 0); if (Math.round((today - latest) / 86400000) > 1) return 0; let streak = 1, max = 1; for (let i = 1; i < sorted.length; i++) { let diff = (sorted[i] - sorted[i - 1]) / 86400000; if (Math.round(diff) === 1) streak++; else streak = 1; max = Math.max(max, streak); } return max; }
         function renderCalendar() {
-            let now = new Date(),
-                y = now.getFullYear(),
-                m = now.getMonth(),
-                firstDay = new Date(y, m, 1).getDay(),
-                days = new Date(y, m + 1, 0).getDate(),
-                cis = appData.stats.checkIns.map(d => new Date(d).toDateString()),
-                html = '';
+            let now = new Date(), y = now.getFullYear(), m = now.getMonth(), firstDay = new Date(y, m, 1).getDay(), days = new Date(y, m + 1, 0).getDate(), cis = appData.stats.checkIns.map(d => new Date(d).toDateString()), html = '';
             for (let i = 0; i < firstDay; i++) html += '<span style="width:30px;height:30px;"></span>';
-            for (let d = 1; d <= days; d++) { let ds = new Date(y, m, d).toDateString(),
-                    checked = cis.includes(ds),
-                    today = ds === new Date().toDateString();
-                html +=
-                    `<span style="width:30px;height:30px;border-radius:50%;display:inline-flex;align-items:center;justify-content:center;font-size:12px;${checked?'background:#f7a8c4;color:white;':today?'border:2px solid #f7a8c4;font-weight:700;':'background:#eee;'}">${d}</span>`; }
+            for (let d = 1; d <= days; d++) { let ds = new Date(y, m, d).toDateString(), checked = cis.includes(ds), today = ds === new Date().toDateString(); html += `<span style="width:30px;height:30px;border-radius:50%;display:inline-flex;align-items:center;justify-content:center;font-size:12px;${checked?'background:#f7a8c4;color:white;':today?'border:2px solid #f7a8c4;font-weight:700;':'background:#eee;'}">${d}</span>`; }
             document.getElementById('calendarArea').innerHTML = html;
         }
-
-        function setDailyGoal(val) { appData.stats.dailyNewGoal = parseInt(val) || 10;
-            scheduleSave(); }
-
+        function setDailyGoal(val) { appData.stats.dailyNewGoal = parseInt(val) || 10; scheduleSave(); }
         function renderEbbinghausCurve() {
-            const chartEl = document.getElementById('ebbinghausChart'),
-                legendEl = document.getElementById('ebbinghausLegend'),
-                totalEl = document.getElementById('ebbinghausTotal');
+            const chartEl = document.getElementById('ebbinghausChart'), legendEl = document.getElementById('ebbinghausLegend'), totalEl = document.getElementById('ebbinghausTotal');
             if (!chartEl || !legendEl || !totalEl) return;
-            const now = Date.now(),
-                stages = [{ key: 'due', label: '待复习', color: '#e85d75', desc: '已到期' }, { key: '10min',
-                    label: '<10分钟', color: '#f08080', desc: '刚学习' }, { key: '4hr', label: '10分-4时',
-                    color: '#f4a460', desc: '短期记忆' }, { key: '1day', label: '4时-1天', color: '#f0c060',
-                    desc: '1天内' }, { key: '3day', label: '1-3天', color: '#8fbc8f', desc: '巩固期' }, { key: '7day',
-                    label: '3-7天', color: '#5f9b7a', desc: '稳定期' }, { key: '15day', label: '7-15天',
-                    color: '#4a90a4', desc: '长期' }, { key: '30day', label: '15-30天', color: '#6b7db3',
-                    desc: '牢固' }, { key: 'over30day', label: '超30天', color: '#c08060',
-                desc: '未掌握' }, { key: 'mastered', label: '已掌握', color: '#a080c0', desc: '熟练' }];
+            const now = Date.now(), stages = [{ key: 'due', label: '待复习', color: '#e85d75', desc: '已到期' }, { key: '10min', label: '<10分钟', color: '#f08080', desc: '刚学习' }, { key: '4hr', label: '10分-4时', color: '#f4a460', desc: '短期记忆' }, { key: '1day', label: '4时-1天', color: '#f0c060', desc: '1天内' }, { key: '3day', label: '1-3天', color: '#8fbc8f', desc: '巩固期' }, { key: '7day', label: '3-7天', color: '#5f9b7a', desc: '稳定期' }, { key: '15day', label: '7-15天', color: '#4a90a4', desc: '长期' }, { key: '30day', label: '15-30天', color: '#6b7db3', desc: '牢固' }, { key: 'over30day', label: '超30天', color: '#c08060', desc: '未掌握' }, { key: 'mastered', label: '已掌握', color: '#a080c0', desc: '熟练' }];
             let allWords = [];
             appData.books.forEach(b => allWords.push(...b.words));
             const counts = {};
             stages.forEach(s => counts[s.key] = 0);
-            allWords.forEach(w => { if (w.mastered) counts['mastered']++;
-                else { const diff = w.nextReview - now; if (diff <= 0) counts['due']++;
-                    else if (diff <= 600000) counts['10min']++;
-                    else if (diff <= 14400000) counts['4hr']++;
-                    else if (diff <= 86400000) counts['1day']++;
-                    else if (diff <= 259200000) counts['3day']++;
-                    else if (diff <= 604800000) counts['7day']++;
-                    else if (diff <= 1296000000) counts['15day']++;
-                    else if (diff <= 2592000000) counts['30day']++;
-                    else counts['over30day']++; } });
+            allWords.forEach(w => { if (w.mastered) counts['mastered']++; else { const diff = w.nextReview - now; if (diff <= 0) counts['due']++; else if (diff <= 600000) counts['10min']++; else if (diff <= 14400000) counts['4hr']++; else if (diff <= 86400000) counts['1day']++; else if (diff <= 259200000) counts['3day']++; else if (diff <= 604800000) counts['7day']++; else if (diff <= 1296000000) counts['15day']++; else if (diff <= 2592000000) counts['30day']++; else counts['over30day']++; } });
             const maxCount = Math.max(...Object.values(counts), 1);
-            chartEl.innerHTML = stages.map(s => { const h = Math.max(4, Math.round((counts[s.key] / maxCount) * 140)); return `<div class="eb-bar-wrapper" title="${s.desc}: ${counts[s.key]}个"><div class="eb-bar-count">${counts[s.key]}</div><div class="eb-bar" style="height:${h}px;background:${s.color};${counts[s.key]===0?'opacity:0.35;':''}"></div><div class="eb-bar-label">${s.label}</div></div>`; })
-                .join('');
-            legendEl.innerHTML = stages.map(s =>
-                `<span><span class="eb-legend-dot" style="background:${s.color};"></span>${s.label}(${s.desc})</span>`
-                ).join('');
-            totalEl.innerText =
-                `📚 总词汇量：${allWords.length} 个 | 待复习：${counts['due']} 个 | 已掌握：${counts['mastered']} 个 | 超30天未掌握：${counts['over30day']} 个`;
+            chartEl.innerHTML = stages.map(s => { const h = Math.max(4, Math.round((counts[s.key] / maxCount) * 140)); return `<div class="eb-bar-wrapper" title="${s.desc}: ${counts[s.key]}个"><div class="eb-bar-count">${counts[s.key]}</div><div class="eb-bar" style="height:${h}px;background:${s.color};${counts[s.key]===0?'opacity:0.35;':''}"></div><div class="eb-bar-label">${s.label}</div></div>`; }).join('');
+            legendEl.innerHTML = stages.map(s => `<span><span class="eb-legend-dot" style="background:${s.color};"></span>${s.label}(${s.desc})</span>`).join('');
+            totalEl.innerText = `📚 总词汇量：${allWords.length} 个 | 待复习：${counts['due']} 个 | 已掌握：${counts['mastered']} 个 | 超30天未掌握：${counts['over30day']} 个`;
         }
-
-        function toggleReminder() { if (!('Notification' in window)) { alert('浏览器不支持通知'); return; } if (appData.settings
-                .reminderEnabled) { appData.settings.reminderEnabled = false; if (reminderTimer) clearInterval(
-                    reminderTimer);
-                reminderTimer = null;
-                saveData();
-                updateSettingsDisplay(); return; } if (Notification.permission === 'granted') { appData.settings
-                .reminderEnabled = true;
-                saveData();
-                setupReminder();
-                updateSettingsDisplay(); } else if (Notification.permission === 'denied') { alert(
-                '通知权限已被拒绝，请在浏览器设置中开启'); } else { Notification.requestPermission().then(perm => { if (perm ===
-                        'granted') { appData.settings.reminderEnabled = true;
-                        saveData();
-                        setupReminder();
-                        updateSettingsDisplay(); } else alert('需要授予通知权限'); }); } }
-
-        function setupReminder() { if (reminderTimer) clearInterval(reminderTimer); if (!appData.settings.reminderEnabled)
-            return;
-            reminderTimer = setInterval(() => { let now = new Date(),
-                    [h, m] = (appData.settings.reminderTime || '09:00').split(':').map(Number); if (now.getHours() ===
-                    h && now.getMinutes() === m && now.getSeconds() < 5 && Notification.permission === 'granted') { new
-                    Notification('📚 该背单词啦！', { body: `当前有 ${getFilteredWords().length} 个单词待复习~`,
-                        icon: 'data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><text y="20" font-size="20">📚</text></svg>',
-                        tag: 'korean-reminder' }); } }, 30000); }
-
-        function toggleSound() { appData.settings.soundEnabled = !appData.settings.soundEnabled;
-            saveData();
-            updateSettingsDisplay(); if (appData.settings.soundEnabled) { playSoundEffect('click'); } }
-
-        function toggleAutoReadOnReview() {
-            appData.settings.autoReadOnReview = !appData.settings.autoReadOnReview;
-            saveData();
-            updateSettingsDisplay();
-            if (appData.settings.autoReadOnReview) { playSoundEffect('click'); }
-        }
-
-        function applySettings() { if (appData.settings.darkMode) document.body.classList.add('dark');
-            changeFontSize(appData.settings.fontSize);
-            updateStats(); if (appData.settings.reminderEnabled) setupReminder();
-            updateSettingsDisplay(); }
-
-        function toggleDarkMode() { document.body.classList.toggle('dark');
-            appData.settings.darkMode = !appData.settings.darkMode;
-            saveData(); }
-
-        function changeFontSize(size) { appData.settings.fontSize = parseInt(size) || 36;
-            document.querySelectorAll('.word-korean').forEach(el => el.style.fontSize = appData.settings.fontSize + 'px');
-            let fsi = document.getElementById('fontSizeInput'); if (fsi) fsi.value = appData.settings.fontSize;
-            scheduleSave(); }
-
-        function toggleLang() { const isKo = appData.settings.lang === 'zh';
-            appData.settings.lang = isKo ? 'ko' : 'zh';
-            const navs = document.querySelectorAll('.nav-item'); if (navs.length >= 5) { navs[0].innerHTML =
-                    `<svg viewBox="0 0 24 24" style="stroke:#e8849a;fill:none;"><use href="#icon-cat"/></svg>${isKo?'학습':'学习'}`;
-                navs[1].innerHTML =
-                    `<svg viewBox="0 0 24 24" style="stroke:#b392c0;fill:none;"><use href="#icon-bunny"/></svg>${isKo?'철자':'拼写'}`;
-                navs[2].innerHTML =
-                    `<svg viewBox="0 0 24 24" style="stroke:#e2a87b;fill:none;"><use href="#icon-bear"/></svg>${isKo?'단어장':'词库'}`;
-                navs[3].innerHTML =
-                    `<svg viewBox="0 0 24 24" style="stroke:#f0c060;fill:none;"><use href="#icon-star"/></svg>${isKo?'내정보':'我的'}`;
-                navs[4].innerHTML =
-                    `<svg viewBox="0 0 24 24" style="stroke:#8e8ea0;fill:none;"><use href="#icon-gear"/></svg>${isKo?'설정':'设置'}`; }
-            saveData(); }
+        function toggleReminder() { if (!('Notification' in window)) { alert('浏览器不支持通知'); return; } if (appData.settings.reminderEnabled) { appData.settings.reminderEnabled = false; if (reminderTimer) clearInterval(reminderTimer); reminderTimer = null; saveData(); updateSettingsDisplay(); return; } if (Notification.permission === 'granted') { appData.settings.reminderEnabled = true; saveData(); setupReminder(); updateSettingsDisplay(); } else if (Notification.permission === 'denied') { alert('通知权限已被拒绝，请在浏览器设置中开启'); } else { Notification.requestPermission().then(perm => { if (perm === 'granted') { appData.settings.reminderEnabled = true; saveData(); setupReminder(); updateSettingsDisplay(); } else alert('需要授予通知权限'); }); } }
+        function setupReminder() { if (reminderTimer) clearInterval(reminderTimer); if (!appData.settings.reminderEnabled) return; reminderTimer = setInterval(() => { let now = new Date(), [h, m] = (appData.settings.reminderTime || '09:00').split(':').map(Number); if (now.getHours() === h && now.getMinutes() === m && now.getSeconds() < 5 && Notification.permission === 'granted') { new Notification('📚 该背单词啦！', { body: `当前有 ${getFilteredWords().length} 个单词待复习~`, icon: 'data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><text y="20" font-size="20">📚</text></svg>', tag: 'korean-reminder' }); } }, 30000); }
+        function toggleSound() { appData.settings.soundEnabled = !appData.settings.soundEnabled; saveData(); updateSettingsDisplay(); if (appData.settings.soundEnabled) { playSoundEffect('click'); } }
+        function toggleAutoReadOnReview() { appData.settings.autoReadOnReview = !appData.settings.autoReadOnReview; saveData(); updateSettingsDisplay(); if (appData.settings.autoReadOnReview) { playSoundEffect('click'); } }
+        function applySettings() { if (appData.settings.darkMode) document.body.classList.add('dark'); changeFontSize(appData.settings.fontSize); updateStats(); if (appData.settings.reminderEnabled) setupReminder(); updateSettingsDisplay(); }
+        function toggleDarkMode() { document.body.classList.toggle('dark'); appData.settings.darkMode = !appData.settings.darkMode; saveData(); }
+        function changeFontSize(size) { appData.settings.fontSize = parseInt(size) || 36; document.querySelectorAll('.word-korean').forEach(el => el.style.fontSize = appData.settings.fontSize + 'px'); let fsi = document.getElementById('fontSizeInput'); if (fsi) fsi.value = appData.settings.fontSize; scheduleSave(); }
+        function toggleLang() { const isKo = appData.settings.lang === 'zh'; appData.settings.lang = isKo ? 'ko' : 'zh'; const navs = document.querySelectorAll('.nav-item'); if (navs.length >= 5) { navs[0].innerHTML = `<svg viewBox="0 0 24 24" style="stroke:#e8849a;fill:none;"><use href="#icon-cat"/></svg>${isKo?'학습':'学习'}`; navs[1].innerHTML = `<svg viewBox="0 0 24 24" style="stroke:#b392c0;fill:none;"><use href="#icon-bunny"/></svg>${isKo?'철자':'拼写'}`; navs[2].innerHTML = `<svg viewBox="0 0 24 24" style="stroke:#e2a87b;fill:none;"><use href="#icon-bear"/></svg>${isKo?'단어장':'词库'}`; navs[3].innerHTML = `<svg viewBox="0 0 24 24" style="stroke:#f0c060;fill:none;"><use href="#icon-star"/></svg>${isKo?'내정보':'我的'}`; navs[4].innerHTML = `<svg viewBox="0 0 24 24" style="stroke:#8e8ea0;fill:none;"><use href="#icon-gear"/></svg>${isKo?'설정':'设置'}`; } saveData(); }
 
         function switchTab(tab) {
             currentActiveTab = tab;
@@ -3568,19 +2984,18 @@
             const navEl = document.querySelector(`.nav-item[data-tab="${tab}"]`);
             if (pageEl) pageEl.classList.add('active');
             if (navEl) navEl.classList.add('active');
-            if (tab === 'review') { updateReviewGroupSelector();
-                refreshReview(); } else if (tab === 'spell') startSpell();
-            else if (tab === 'manage') { updateBookDisplay();
-                renderWordList(); } else if (tab === 'profile') updateStats();
+            if (tab === 'review') { updateReviewGroupSelector(); refreshReview(); }
+            else if (tab === 'spell') { 
+                if (isSpellActive()) { restoreSpellUI(); } else { startSpell(); }
+            }
+            else if (tab === 'manage') { updateBookDisplay(); renderWordList(); }
+            else if (tab === 'profile') updateStats();
             else if (tab === 'settings') updateSettingsDisplay();
         }
-        document.querySelectorAll('.nav-item').forEach(btn => btn.addEventListener('click', () => switchTab(btn.dataset
-            .tab)));
+        document.querySelectorAll('.nav-item').forEach(btn => btn.addEventListener('click', () => switchTab(btn.dataset.tab)));
 
         window.addEventListener('resize', () => { updateSwipeThreshold(); });
-        document.addEventListener('visibilitychange', () => { if (document.hidden) { stopGoogleAudio();
-                speechSynth.cancel();
-                flushPendingSave(); } });
+        document.addEventListener('visibilitychange', () => { if (document.hidden) { stopGoogleAudio(); speechSynth.cancel(); flushPendingSave(); } });
 
         async function init() {
             initData();
