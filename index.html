@@ -490,27 +490,23 @@
         function speakWithBrowserTTS(text, rate) { speechSynth.cancel(); if (!text) return; const u = new SpeechSynthesisUtterance(text); u.lang = 'ko-KR'; u.rate = rate || currentSpeed; if (koreanVoice) u.voice = koreanVoice; speechSynth.speak(u); }
         function updateSpeakerIcons() { const iconId = appData.settings.speakerIcon || 'icon-speaker-e'; ['frontSpeakerIcon','spellSpeakerIcon'].forEach(sid => { const el = document.getElementById(sid); if (el) { el.querySelector('use').setAttribute('href', '#' + iconId); } }); }
         function selectSpeakerIcon(iconId) { appData.settings.speakerIcon = iconId; saveData(); updateSpeakerIcons(); playSoundEffect('click'); }
-        // ==================== 第一部分结束，请继续复制第二部分 ====================        <!-- 接第一部分末尾 -->
-        // 数据初始化与存储
-        function ensureDefaultGroup() {
-            const book = getActiveBook();
-            if (!book || book.id === MASTERED_BOOK_ID) return;
-            if (!book.groups) book.groups = [];
-            const defaultGroup = book.groups.find(g => g.id === DEFAULT_GROUP_ID);
-            if (defaultGroup) {
-                book.groups = book.groups.filter(g => g.id !== DEFAULT_GROUP_ID);
-                book.groups.unshift(defaultGroup);
-            } else {
-                book.groups.unshift({ id: DEFAULT_GROUP_ID, name: DEFAULT_GROUP_NAME });
-            }
-        }
+        // ==================== 第一部分结束，请继续复制第二部分 ====================        <!-- ==================== 第二部分：数据初始化、语音、学习页、拼写页 ==================== -->
+        // 数据初始化与存储（修改：初始不创建任何分组）
         function ensureErrorBook() { if (!appData.books.find(b => b.id === ERROR_BOOK_ID)) { appData.books.push({ id: ERROR_BOOK_ID, name: ERROR_BOOK_NAME, groups: [], words: [], color: '#e0a0a0' }); } }
         function addWordToErrorBook(korean, chinese, pos, example) { ensureErrorBook(); const eb = appData.books.find(b => b.id === ERROR_BOOK_ID); if (!eb.words.find(w => w.korean === korean)) { eb.words.push({ id: Date.now() + Math.random(), korean, chinese, pos, example, nextReview: Date.now(), reviewCount: 0, mastered: false, wrongCount: 0, notes: '', groupId: null, spellErrorCount: 1 }); } else { const ew = eb.words.find(w => w.korean === korean); if (ew) ew.spellErrorCount = (ew.spellErrorCount || 0) + 1; } saveData(); }
         function initData() {
             let raw = localStorage.getItem(STORAGE_KEY);
             if (raw) {
                 try { appData = JSON.parse(raw); } catch (e) { initDefault(); return; }
-                appData.books.forEach(b => { if (!b.groups) b.groups = []; if (b.color === undefined) b.color = '#f7a8c4'; b.words.forEach(w => { if (w.tags && !w.notes) { w.notes = (w.tags || []).join(','); delete w.tags; } if (!w.notes) w.notes = ''; if (w.groupId === undefined) w.groupId = null; }); });
+                appData.books.forEach(b => {
+                    if (!b.groups) b.groups = [];
+                    if (b.color === undefined) b.color = '#f7a8c4';
+                    b.words.forEach(w => {
+                        if (w.tags && !w.notes) { w.notes = (w.tags || []).join(','); delete w.tags; }
+                        if (!w.notes) w.notes = '';
+                        if (w.groupId === undefined) w.groupId = null;
+                    });
+                });
                 if (!appData.stats) appData.stats = { checkIns: [], todayNewCount: 0, todayReviewCount: 0, todayCorrect: 0, todayTotal: 0, streak: 0, dailyNewGoal: 10, lastBackupDate: null };
                 if (!appData.settings) appData.settings = { darkMode: false, fontSize: 36, lang: 'zh', reviewIntervals: { hardMin: 10, fuzzyHr: 4, easyStages: [1,3,7,15,30] }, spellMode: 'random', reminderEnabled: false, reminderTime: '09:00', selectedVoiceURI: 'auto', soundEnabled: true, autoReadOnReview: false, speakerIcon: 'icon-speaker-e', spellErrorCounts: {}, reviewOrder: 'random', spellOrder: 'random', backupReminderEnabled: true };
                 if (!appData.settings.reviewIntervals) appData.settings.reviewIntervals = { hardMin: 10, fuzzyHr: 4, easyStages: [1,3,7,15,30] };
@@ -522,29 +518,35 @@
                 if (appData.settings.backupReminderEnabled === undefined) appData.settings.backupReminderEnabled = true;
                 if (appData.wordListCollapsed === undefined) appData.wordListCollapsed = false;
                 if (!appData.collapsedGroups) appData.collapsedGroups = {};
-                ensureDefaultGroup(); ensureErrorBook(); migrateUngroupedWords(); saveData();
+                if (!appData.books.find(b => b.id === ERROR_BOOK_ID)) ensureErrorBook();
+                saveData();
                 return;
             }
             initDefault();
         }
-        function migrateUngroupedWords() { const book = getActiveBook(); if (!book) return; ensureDefaultGroup(); book.words.forEach(w => { if (!w.groupId || !book.groups.find(g => g.id === w.groupId)) { w.groupId = DEFAULT_GROUP_ID; } }); saveData(); }
         function initDefault() {
+            // 关键修改：初始不创建任何分组，单词的 groupId 设为 null
             appData = {
                 books: [{
-                    id: 'default', name: '默认单词本',
-                    groups: [{ id: DEFAULT_GROUP_ID, name: DEFAULT_GROUP_NAME }],
+                    id: 'default',
+                    name: '默认单词本',
+                    groups: [],                // 无分组
                     words: [
-                        { id: 1, korean: '사랑', chinese: '爱情', pos: '名词', example: '사랑해요', nextReview: Date.now(), reviewCount: 0, mastered: false, wrongCount: 0, notes: '', groupId: DEFAULT_GROUP_ID },
-                        { id: 2, korean: '공부', chinese: '学习', pos: '名词', example: '열심히 공부하세요', nextReview: Date.now(), reviewCount: 0, mastered: false, wrongCount: 0, notes: '', groupId: DEFAULT_GROUP_ID },
-                        { id: 3, korean: '안녕하세요', chinese: '你好', pos: '感叹词', example: '안녕하세요, 반갑습니다', nextReview: Date.now(), reviewCount: 0, mastered: false, wrongCount: 0, notes: '', groupId: DEFAULT_GROUP_ID }
+                        { id: 1, korean: '사랑', chinese: '爱情', pos: '名词', example: '사랑해요', nextReview: Date.now(), reviewCount: 0, mastered: false, wrongCount: 0, notes: '', groupId: null },
+                        { id: 2, korean: '공부', chinese: '学习', pos: '名词', example: '열심히 공부하세요', nextReview: Date.now(), reviewCount: 0, mastered: false, wrongCount: 0, notes: '', groupId: null },
+                        { id: 3, korean: '안녕하세요', chinese: '你好', pos: '感叹词', example: '안녕하세요, 반갑습니다', nextReview: Date.now(), reviewCount: 0, mastered: false, wrongCount: 0, notes: '', groupId: null }
                     ],
                     color: '#f7a8c4'
                 }],
-                activeBookId: 'default', showMastered: false, wordListCollapsed: false, collapsedGroups: {},
+                activeBookId: 'default',
+                showMastered: false,
+                wordListCollapsed: false,
+                collapsedGroups: {},
                 stats: { checkIns: [], todayNewCount: 0, todayReviewCount: 0, todayCorrect: 0, todayTotal: 0, streak: 0, dailyNewGoal: 10, lastBackupDate: null },
                 settings: { darkMode: false, fontSize: 36, lang: 'zh', reviewIntervals: { hardMin: 10, fuzzyHr: 4, easyStages: [1,3,7,15,30] }, spellMode: 'random', reminderEnabled: false, reminderTime: '09:00', selectedVoiceURI: 'auto', soundEnabled: true, autoReadOnReview: false, speakerIcon: 'icon-speaker-e', spellErrorCounts: {}, reviewOrder: 'random', spellOrder: 'random', backupReminderEnabled: true }
             };
-            ensureErrorBook(); saveData();
+            ensureErrorBook();
+            saveData();
         }
         function saveData() { try { localStorage.setItem(STORAGE_KEY, JSON.stringify(appData)); appData.stats.lastBackupDate = new Date().toISOString(); } catch (e) { alert('⚠️ 存储空间不足，请导出备份数据！'); } }
         function getActiveBook() { if (appData.activeBookId === MASTERED_BOOK_ID) { const words = []; appData.books.forEach(b => { if (b.id !== ERROR_BOOK_ID) b.words.forEach(w => { if (w.mastered) words.push(w); }); }); return { id: MASTERED_BOOK_ID, name: MASTERED_BOOK_NAME, groups: [], words, color: '#f7a8c4' }; } return appData.books.find(b => b.id === appData.activeBookId) || appData.books[0]; }
@@ -563,7 +565,7 @@
         function setSpeed(speed, btn) { currentSpeed = speed; document.querySelectorAll('.speed-btn').forEach(b => b.classList.remove('active')); if (btn) btn.classList.add('active'); }
 
         // 学习页
-        function populateReviewGroupFilter() { const sel = document.getElementById('reviewGroupFilter'); if (!sel) return; const book = getActiveBook(); const groups = book.groups || []; sel.innerHTML = '<option value="">全部词组</option>'; groups.forEach(g => { sel.innerHTML += `<option value="${escapeHTML(g.id)}">📁 ${escapeHTML(g.name)}</option>`; }); }
+        function populateReviewGroupFilter() { const sel = document.getElementById('reviewGroupFilter'); if (!sel) return; const book = getActiveBook(); const groups = book.groups || []; sel.innerHTML = '<option value="">全部词组</option>'; groups.forEach(g => { sel.innerHTML += `<option value="${escapeHTML(g.id)}">📁 ${escapeHTML(g.name)}</option>`; }); if (groups.length === 0) { sel.innerHTML += '<option value="" disabled>— 无分组 —</option>'; } }
         function onReviewGroupChange() { loadReviewWord(); }
         function getReviewableWords() { let words = getWords().filter(w => !w.mastered); const groupFilter = document.getElementById('reviewGroupFilter')?.value; if (groupFilter) { words = words.filter(w => w.groupId === groupFilter); } const due = words.filter(w => w.nextReview <= Date.now()); if (appData.stats.todayNewCount >= appData.stats.dailyNewGoal) { return due.filter(w => w.reviewCount > 0); } return due; }
         function loadReviewWord() { reviewList = getReviewableWords(); const order = appData.settings.reviewOrder || 'random'; if (order === 'sequential') { reviewList.sort((a, b) => a.nextReview - b.nextReview); } else if (order === 'reverse') { reviewList.sort((a, b) => b.nextReview - a.nextReview); } else { reviewList.sort(() => Math.random() - 0.5); } reviewIndex = 0; if (!reviewList.length) { showReviewCompleted(); return; } hideReviewCompleted(); showReviewWord(); updateReviewProgress(); }
@@ -578,7 +580,7 @@
 
         // 拼写页
         function getPracticeWords() { let words = getWords().filter(w => !w.mastered); const groupFilter = document.getElementById('spellGroupFilter')?.value; if (groupFilter) { words = words.filter(w => w.groupId === groupFilter); } return words; }
-        function populateSpellGroupFilter() { const sel = document.getElementById('spellGroupFilter'); if (!sel) return; const book = getActiveBook(); const groups = book.groups || []; sel.innerHTML = '<option value="">全部词组</option>'; groups.forEach(g => { sel.innerHTML += `<option value="${escapeHTML(g.id)}">📁 ${escapeHTML(g.name)}</option>`; }); }
+        function populateSpellGroupFilter() { const sel = document.getElementById('spellGroupFilter'); if (!sel) return; const book = getActiveBook(); const groups = book.groups || []; sel.innerHTML = '<option value="">全部词组</option>'; groups.forEach(g => { sel.innerHTML += `<option value="${escapeHTML(g.id)}">📁 ${escapeHTML(g.name)}</option>`; }); if (groups.length === 0) { sel.innerHTML += '<option value="" disabled>— 无分组 —</option>'; } }
         function startSpell() { let words = getPracticeWords(); const order = appData.settings.spellOrder || 'random'; if (order === 'sequential') { } else if (order === 'reverse') { words.reverse(); } else { words = [...words].sort(() => Math.random() - 0.5); } spellList = words; spellErrorList = []; spellCheckedCurrent = false; spellTotalCount = 0; spellCurrentErrorCount = 0; spellIsCorrect = false; updateSpellProgress(); if (!spellList.length) { document.getElementById('spellProgress').innerText = '没有可练习的单词'; document.getElementById('spellChineseRow').style.display = 'none'; document.getElementById('spellInput').value = ''; document.getElementById('spellFeedback').innerHTML = ''; document.getElementById('spellFadeHint').innerHTML = ''; document.getElementById('spellPOS').style.display = 'none'; spellWord = null; return; } document.getElementById('spellChineseRow').style.display = 'flex'; resetSpellButton(); nextSpellWord(); }
         function resetSpell() { spellCheckedCurrent = false; spellCurrentErrorCount = 0; spellIsCorrect = false; document.getElementById('spellFeedback').innerHTML = ''; document.getElementById('spellFadeHint').innerHTML = ''; resetSpellButton(); playSoundEffect('click'); startSpell(); }
         function resetSpellButton() { const btn = document.getElementById('spellCheckBtn'); if (btn) { btn.innerText = '确认'; btn.onclick = function() { handleSpellAction(); }; } }
@@ -586,7 +588,7 @@
         function nextSpellWord() { if (!spellList.length) { if (spellErrorList.length) { spellList = [...spellErrorList]; spellErrorList = []; } else { document.getElementById('spellProgress').innerText = `🎉 拼写完成！已拼写 ${spellTotalCount} 个`; document.getElementById('spellChineseRow').style.display = 'none'; document.getElementById('spellInput').value = ''; document.getElementById('spellFeedback').innerHTML = ''; document.getElementById('spellFadeHint').innerHTML = ''; document.getElementById('spellPOS').style.display = 'none'; spellWord = null; updateSpellProgress(); return; } } spellWord = spellList.shift(); document.getElementById('spellChinese').innerText = spellWord.chinese; document.getElementById('spellChinese').style.color = ''; const posEl = document.getElementById('spellPOS'); if (spellWord.pos) { posEl.innerText = spellWord.pos; posEl.style.display = 'inline-block'; } else { posEl.style.display = 'none'; } document.getElementById('spellInput').value = ''; document.getElementById('spellFeedback').innerHTML = ''; document.getElementById('spellFadeHint').innerHTML = ''; const total = spellList.length + (spellWord ? 1 : 0) + spellErrorList.length + spellTotalCount; const done = spellTotalCount; document.getElementById('spellProgress').innerText = `${done} / ${total}`; spellCheckedCurrent = false; spellCurrentErrorCount = 0; spellIsCorrect = false; resetSpellButton(); updateSpellProgress(); setTimeout(() => document.getElementById('spellInput').focus(), 150); }
         function handleSpellAction() { if (spellIsCorrect) { nextSpellWord(); return; } checkSpell(); }
         function checkSpell() { if (!spellWord || spellCheckedCurrent) return; let input = document.getElementById('spellInput').value.trim(); if (!input) return; spellCheckedCurrent = true; let ni = input.normalize('NFC'), nc = spellWord.korean.normalize('NFC'); spellTotalCount++; if (ni === nc) { document.getElementById('spellFeedback').innerHTML = `<span class="correct">✅ 正确！${escapeHTML(spellWord.korean)}</span>`; document.getElementById('spellFadeHint').innerHTML = ''; spellCurrentErrorCount = 0; spellIsCorrect = true; appData.stats.todayCorrect++; appData.stats.todayTotal++; appData.stats.todayReviewCount++; if (!appData.settings.spellErrorCounts) appData.settings.spellErrorCounts = {}; appData.settings.spellErrorCounts[spellWord.korean] = 0; saveData(); updateStats(); playSoundEffect('correct'); const btn = document.getElementById('spellCheckBtn'); if (btn) { btn.innerText = '下一词'; btn.onclick = function() { nextSpellWord(); }; } } else { spellCurrentErrorCount++; if (!appData.settings.spellErrorCounts) appData.settings.spellErrorCounts = {}; appData.settings.spellErrorCounts[spellWord.korean] = (appData.settings.spellErrorCounts[spellWord.korean] || 0) + 1; const totalErrors = appData.settings.spellErrorCounts[spellWord.korean]; document.getElementById('spellFeedback').innerHTML = '<span class="incorrect">🙅‍♀️再试一次吧~</span>'; if (totalErrors >= SPELL_ERROR_THRESHOLD) { document.getElementById('spellFadeHint').innerHTML = `💡 提示：<b>${escapeHTML(spellWord.korean)}</b>`; document.getElementById('spellFadeHint').style.opacity = '0.8'; } else { document.getElementById('spellFadeHint').innerHTML = ''; } if (totalErrors >= SPELL_ERROR_THRESHOLD) { addWordToErrorBook(spellWord.korean, spellWord.chinese, spellWord.pos || '', spellWord.example || ''); } spellErrorList.push(spellWord); appData.stats.todayTotal++; appData.stats.todayReviewCount++; saveData(); updateStats(); playSoundEffect('hard'); spellCheckedCurrent = false; document.getElementById('spellInput').value = ''; setTimeout(() => document.getElementById('spellInput').focus(), 150); } updateSpellProgress(); }
-        // ==================== 第二部分结束，请继续复制第三部分 ====================        <!-- 接第二部分末尾 -->
+        // ==================== 第二部分结束，请继续复制第三部分 ====================        <!-- ==================== 第三部分：词库、分组、列表、导入、设置、统计、初始化 ==================== -->
         // 词库管理
         function updateBookDisplay() { const book = getActiveBook(); const color = book.color || '#f7a8c4'; document.getElementById('currentBookName').innerHTML = `<span class="color-dot" style="background:${color};"></span>${book.name}`; }
         function openBookList() { renderBookListPopup(); document.getElementById('bookListPopup').style.display = 'flex'; }
@@ -594,25 +596,25 @@
         function closeBookList(e) { if (e.target === document.getElementById('bookListPopup')) document.getElementById('bookListPopup').style.display = 'none'; }
         function closeBookListDirect() { document.getElementById('bookListPopup').style.display = 'none'; }
         function getSelectedBookColor() { const sel = document.querySelector('#newBookColorPicker .color-picker-option.selected'); return sel ? sel.dataset.color : '#f7a8c4'; }
-        function switchBook(id) { appData.activeBookId = id; if (id !== MASTERED_BOOK_ID) { ensureDefaultGroup(); migrateUngroupedWords(); } saveData(); updateBookDisplay(); expandedWordIds.clear(); selectedWordIds.clear(); showAllMeanings = false; updateToggleAllMeaningsBtn(); updateMasteredFilterBtn(); renderWordList(); closeBookListDirect(); populateSpellGroupFilter(); populateReviewGroupFilter(); if (currentActiveTab === 'review') loadReviewWord(); else if (currentActiveTab === 'spell') startSpell(); }
+        function switchBook(id) { appData.activeBookId = id; saveData(); updateBookDisplay(); expandedWordIds.clear(); selectedWordIds.clear(); showAllMeanings = false; updateToggleAllMeaningsBtn(); updateMasteredFilterBtn(); renderWordList(); closeBookListDirect(); populateSpellGroupFilter(); populateReviewGroupFilter(); if (currentActiveTab === 'review') loadReviewWord(); else if (currentActiveTab === 'spell') startSpell(); }
         function renameBook(id) { let book = appData.books.find(b => b.id === id); if (!book) return; let n = prompt('重命名单词本：', book.name); if (n && n.trim()) { book.name = n.trim(); saveData(); updateBookDisplay(); renderBookListPopup(); } }
         function editBookColor(id) { let book = appData.books.find(b => b.id === id); if (!book) return; const color = prompt('请选择颜色代码（例如 #f7a8c4）或从以下选择：\n' + BOOK_COLORS.join(', '), book.color || '#f7a8c4'); if (color && /^#[0-9a-fA-F]{6}$/.test(color.trim())) { book.color = color.trim(); saveData(); updateBookDisplay(); renderBookListPopup(); renderWordList(); } else if (color) { alert('无效的颜色代码，请输入如 #ffcc00 的格式'); } }
         function createNewBook() { let n = document.getElementById('newBookName').value.trim(); if (!n) return; let id = Date.now().toString(); let color = getSelectedBookColor(); appData.books.push({ id, name: n, groups: [], words: [], color }); appData.activeBookId = id; saveData(); updateBookDisplay(); renderWordList(); renderBookListPopup(); document.getElementById('newBookName').value = ''; populateSpellGroupFilter(); populateReviewGroupFilter(); }
         function deleteBook(id) { if (id === ERROR_BOOK_ID) { alert('错词本不可删除'); return; } if (appData.books.length <= 1) { alert('至少保留一个单词本'); return; } if (!confirm('确定删除？')) return; appData.books = appData.books.filter(b => b.id !== id); if (appData.activeBookId === id) appData.activeBookId = appData.books[0].id; saveData(); updateBookDisplay(); renderWordList(); renderBookListPopup(); populateSpellGroupFilter(); populateReviewGroupFilter(); if (currentActiveTab === 'review') loadReviewWord(); else if (currentActiveTab === 'spell') startSpell(); }
-        function copyBook(id) { let book = appData.books.find(b => b.id === id); if (!book) return; let newBook = JSON.parse(JSON.stringify(book)); newBook.id = Date.now().toString(); newBook.name = book.name + ' 副本'; newBook.words.forEach(w => { w.id = Date.now() + Math.random(); }); newBook.groups.forEach(g => { g.id = 'g' + Date.now() + Math.random(); }); newBook.words.forEach(w => { const oldGroupId = w.groupId; const newGroup = newBook.groups.find(ng => book.groups.find(og => og.id === oldGroupId)?.name === ng.name); w.groupId = newGroup ? newGroup.id : DEFAULT_GROUP_ID; }); appData.books.push(newBook); appData.activeBookId = newBook.id; saveData(); updateBookDisplay(); renderWordList(); renderBookListPopup(); populateSpellGroupFilter(); populateReviewGroupFilter(); }
+        function copyBook(id) { let book = appData.books.find(b => b.id === id); if (!book) return; let newBook = JSON.parse(JSON.stringify(book)); newBook.id = Date.now().toString(); newBook.name = book.name + ' 副本'; newBook.words.forEach(w => { w.id = Date.now() + Math.random(); }); newBook.groups.forEach(g => { g.id = 'g' + Date.now() + Math.random(); }); newBook.words.forEach(w => { if (w.groupId) { const oldGroupId = w.groupId; const newGroup = newBook.groups.find(ng => book.groups.find(og => og.id === oldGroupId)?.name === ng.name); w.groupId = newGroup ? newGroup.id : null; } }); appData.books.push(newBook); appData.activeBookId = newBook.id; saveData(); updateBookDisplay(); renderWordList(); renderBookListPopup(); populateSpellGroupFilter(); populateReviewGroupFilter(); }
         function handleBookDragStart(e) { bookDragSrcId = e.target.closest('.book-entry')?.id.replace('book-', ''); e.target.closest('.book-entry')?.classList.add('dragging'); e.dataTransfer.effectAllowed = 'move'; e.dataTransfer.setData('text/plain', bookDragSrcId); }
         function handleBookDragOver(e) { e.preventDefault(); e.dataTransfer.dropEffect = 'move'; }
         function handleBookDrop(e) { e.preventDefault(); const target = e.target.closest('.book-entry'); const targetId = target?.id.replace('book-', ''); if (!bookDragSrcId || !targetId || bookDragSrcId === targetId) return; const srcIndex = appData.books.findIndex(b => b.id === bookDragSrcId); const targetIndex = appData.books.findIndex(b => b.id === targetId); if (srcIndex > -1 && targetIndex > -1) { const moved = appData.books.splice(srcIndex, 1)[0]; appData.books.splice(targetIndex, 0, moved); saveData(); renderBookListPopup(); } bookDragSrcId = null; }
         function handleBookDragEnd(e) { document.querySelectorAll('.book-entry.dragging').forEach(el => el.classList.remove('dragging')); bookDragSrcId = null; }
 
-        // 分组管理
-        function populateGroupSelects() { const book = getActiveBook(); if (!book || book.id === MASTERED_BOOK_ID) return; const groups = book.groups || []; ['inputGroup', 'batchMoveGroup', 'batchGroup'].forEach(sid => { const sel = document.getElementById(sid); if (!sel) return; const cv = sel.value; sel.innerHTML = sid === 'batchMoveGroup' ? '<option value="">移动到...</option>' : '<option value="">📁 分组 (默认词组)</option>'; groups.forEach(g => { sel.innerHTML += `<option value="${escapeHTML(g.id)}" ${cv===g.id?'selected':''}>📁 ${escapeHTML(g.name)}</option>`; }); }); }
+        // 分组管理（支持无分组）
+        function populateGroupSelects() { const book = getActiveBook(); if (!book || book.id === MASTERED_BOOK_ID) return; const groups = book.groups || []; ['inputGroup', 'batchMoveGroup', 'batchGroup'].forEach(sid => { const sel = document.getElementById(sid); if (!sel) return; const cv = sel.value; if (sid === 'batchMoveGroup') { sel.innerHTML = '<option value="">移动到...</option><option value="__none__">📁 无分组</option>'; } else { sel.innerHTML = '<option value="">📁 无分组</option>'; } groups.forEach(g => { sel.innerHTML += `<option value="${escapeHTML(g.id)}" ${cv===g.id?'selected':''}>📁 ${escapeHTML(g.name)}</option>`; }); }); }
         function createNewGroup() { const n = prompt('请输入新分组名称：'); if (!n || !n.trim()) return; const book = getActiveBook(); if (!book || book.id === MASTERED_BOOK_ID) return; if (!book.groups) book.groups = []; const gid = 'g' + Date.now(); book.groups.push({ id: gid, name: n.trim() }); saveData(); populateGroupSelects(); document.getElementById('inputGroup').value = gid; populateSpellGroupFilter(); populateReviewGroupFilter(); renderWordList(); playSoundEffect('add'); }
         function openGroupManager() { if (appData.activeBookId === MASTERED_BOOK_ID) { alert('熟词箱不支持分组管理'); return; } document.getElementById('gmBookName').innerText = getActiveBook().name; renderGroupManagerList(); document.getElementById('groupManagerPopup').style.display = 'flex'; }
-        function renderGroupManagerList() { const book = getActiveBook(); if (!book || book.id === MASTERED_BOOK_ID) return; const groups = (book.groups || []).filter(g => g.id !== DEFAULT_GROUP_ID); document.getElementById('groupManagerList').innerHTML = groups.map((g, idx) => { const wc = book.words.filter(w => w.groupId === g.id).length; return `<div class="group-entry" draggable="true" id="group-${escapeHTML(g.id)}" ondragstart="handleGroupDragStart(event)" ondragover="handleGroupDragOver(event)" ondrop="handleGroupDrop(event)" ondragend="handleGroupDragEnd(event)" style="background:var(--card-bg);"><span style="flex:1;min-width:100px;">📁 ${escapeHTML(g.name)} (${wc}词)</span><div style="display:flex;gap:2px;align-items:center;"><button onclick="copyGroup('${escapeHTML(g.id)}')" title="复制分组" style="background:none;border:none;cursor:pointer;padding:4px;color:var(--text);"><svg width="16" height="16" viewBox="0 0 24 24" style="stroke:currentColor;fill:none;"><use href="#icon-copy"/></svg></button><button onclick="renameGroup('${escapeHTML(g.id)}')" title="重命名" style="background:none;border:none;cursor:pointer;padding:4px;color:var(--text);"><svg width="16" height="16" viewBox="0 0 24 24" style="stroke:currentColor;fill:none;"><use href="#icon-edit-pencil"/></svg></button><button onclick="deleteGroupConfirm('${escapeHTML(g.id)}')" title="删除" style="background:none;border:none;cursor:pointer;padding:4px;color:var(--text);"><svg width="16" height="16" viewBox="0 0 24 24" style="stroke:currentColor;fill:none;"><use href="#icon-trash-3"/></svg></button></div></div>`; }).join('') || '<p style="color:var(--text-muted);text-align:center;">暂无自定义分组</p>'; }
+        function renderGroupManagerList() { const book = getActiveBook(); if (!book || book.id === MASTERED_BOOK_ID) return; const groups = book.groups || []; document.getElementById('groupManagerList').innerHTML = groups.length === 0 ? '<p style="color:var(--text-muted);text-align:center;">还没有分组，请创建</p>' : groups.map((g, idx) => { const wc = book.words.filter(w => w.groupId === g.id).length; return `<div class="group-entry" draggable="true" id="group-${escapeHTML(g.id)}" ondragstart="handleGroupDragStart(event)" ondragover="handleGroupDragOver(event)" ondrop="handleGroupDrop(event)" ondragend="handleGroupDragEnd(event)" style="background:var(--card-bg);"><span style="flex:1;min-width:100px;">📁 ${escapeHTML(g.name)} (${wc}词)</span><div style="display:flex;gap:2px;align-items:center;"><button onclick="copyGroup('${escapeHTML(g.id)}')" title="复制分组" style="background:none;border:none;cursor:pointer;padding:4px;color:var(--text);"><svg width="16" height="16" viewBox="0 0 24 24" style="stroke:currentColor;fill:none;"><use href="#icon-copy"/></svg></button><button onclick="renameGroup('${escapeHTML(g.id)}')" title="重命名" style="background:none;border:none;cursor:pointer;padding:4px;color:var(--text);"><svg width="16" height="16" viewBox="0 0 24 24" style="stroke:currentColor;fill:none;"><use href="#icon-edit-pencil"/></svg></button><button onclick="deleteGroupConfirm('${escapeHTML(g.id)}')" title="删除" style="background:none;border:none;cursor:pointer;padding:4px;color:var(--text);"><svg width="16" height="16" viewBox="0 0 24 24" style="stroke:currentColor;fill:none;"><use href="#icon-trash-3"/></svg></button></div></div>`; }).join(''); }
         function addNewGroup() { const n = document.getElementById('newGroupNameInput').value.trim(); if (!n) return; const book = getActiveBook(); if (!book || book.id === MASTERED_BOOK_ID) return; if (!book.groups) book.groups = []; book.groups.push({ id: 'g' + Date.now(), name: n }); saveData(); document.getElementById('newGroupNameInput').value = ''; renderGroupManagerList(); populateGroupSelects(); populateSpellGroupFilter(); populateReviewGroupFilter(); renderWordList(); playSoundEffect('add'); }
-        function renameGroup(gid) { const g = (getActiveBook().groups || []).find(g => g.id === gid); if (!g || g.id === DEFAULT_GROUP_ID) return; const n = prompt('重命名分组：', g.name); if (n && n.trim()) { g.name = n.trim(); saveData(); renderGroupManagerList(); populateGroupSelects(); populateSpellGroupFilter(); populateReviewGroupFilter(); renderWordList(); } }
-        function deleteGroupConfirm(gid) { if (gid === DEFAULT_GROUP_ID) { alert('默认词组不可删除'); return; } if (!confirm('确定删除该分组吗？单词将移入默认词组。')) return; const book = getActiveBook(); book.groups = (book.groups || []).filter(g => g.id !== gid); book.words.forEach(w => { if (w.groupId === gid) w.groupId = DEFAULT_GROUP_ID; }); saveData(); renderGroupManagerList(); populateGroupSelects(); populateSpellGroupFilter(); populateReviewGroupFilter(); renderWordList(); playSoundEffect('click'); }
+        function renameGroup(gid) { const g = (getActiveBook().groups || []).find(g => g.id === gid); if (!g) return; const n = prompt('重命名分组：', g.name); if (n && n.trim()) { g.name = n.trim(); saveData(); renderGroupManagerList(); populateGroupSelects(); populateSpellGroupFilter(); populateReviewGroupFilter(); renderWordList(); } }
+        function deleteGroupConfirm(gid) { if (!confirm('确定删除该分组吗？单词将移入无分组。')) return; const book = getActiveBook(); book.groups = (book.groups || []).filter(g => g.id !== gid); book.words.forEach(w => { if (w.groupId === gid) w.groupId = null; }); saveData(); renderGroupManagerList(); populateGroupSelects(); populateSpellGroupFilter(); populateReviewGroupFilter(); renderWordList(); playSoundEffect('click'); }
         function copyGroup(gid) { const book = getActiveBook(); if (!book || book.id === MASTERED_BOOK_ID) return; const srcGroup = book.groups.find(g => g.id === gid); if (!srcGroup) return; const newId = 'g' + Date.now(); const newGroup = { id: newId, name: srcGroup.name + ' 副本' }; book.groups.push(newGroup); const srcWords = book.words.filter(w => w.groupId === gid); srcWords.forEach(w => { const newWord = { ...w, id: Date.now() + Math.random(), groupId: newId }; book.words.push(newWord); }); saveData(); renderGroupManagerList(); populateGroupSelects(); populateSpellGroupFilter(); populateReviewGroupFilter(); renderWordList(); playSoundEffect('add'); }
         function handleGroupDragStart(e) { groupDragSrcId = e.target.closest('.group-entry')?.id.replace('group-', ''); e.target.closest('.group-entry')?.classList.add('dragging'); e.dataTransfer.effectAllowed = 'move'; e.dataTransfer.setData('text/plain', groupDragSrcId); }
         function handleGroupDragOver(e) { e.preventDefault(); e.dataTransfer.dropEffect = 'move'; }
@@ -621,17 +623,17 @@
         function closeGroupManager(e) { if (e.target === document.getElementById('groupManagerPopup')) document.getElementById('groupManagerPopup').style.display = 'none'; }
         function closeGroupManagerDirect() { document.getElementById('groupManagerPopup').style.display = 'none'; }
 
-        // 单词列表操作
+        // 单词列表操作（添加单词默认无分组）
         function toggleWordList() { appData.wordListCollapsed = !appData.wordListCollapsed; saveData(); applyWordListCollapseState(); }
         function applyWordListCollapseState() { const c = document.getElementById('wordListContainer'), i = document.getElementById('wordListToggleIcon'), t = document.getElementById('wordListToggleText'); if (appData.wordListCollapsed) { c.classList.add('collapsed'); if (i) i.innerText = '▸'; if (t) t.innerText = '展开单词列表'; } else { c.classList.remove('collapsed'); if (i) i.innerText = '▾'; if (t) t.innerText = '折叠单词列表'; } updateWordListCount(); }
         function updateWordListCount() { const ce = document.getElementById('wordListCount'); if (ce) { const book = getActiveBook(); const vw = appData.showMastered ? book.words.filter(w => w.mastered) : book.words.filter(w => !w.mastered); ce.innerText = `(${vw.length}个单词)`; } }
-        function addWord() { if (appData.activeBookId === MASTERED_BOOK_ID) { alert('熟词箱为虚拟单词本，无法直接添加'); return; } let kr = document.getElementById('inputKorean').value.trim(), zh = document.getElementById('inputChinese').value.trim(), pos = document.getElementById('inputPOS').value.trim(), ex = document.getElementById('inputExample').value.trim(), gid = document.getElementById('inputGroup').value.trim() || DEFAULT_GROUP_ID, notes = document.getElementById('inputNotes').value.trim(); if (!kr && !zh) { alert('请至少填写韩语或中文释义'); return; } let book = getActiveBook(); if (kr && book.words.some(w => w.korean === kr)) { alert('该韩语单词已存在'); return; } ensureDefaultGroup(); if (!book.groups.find(g => g.id === gid)) gid = DEFAULT_GROUP_ID; book.words.unshift({ id: Date.now(), korean: kr, chinese: zh, pos, example: ex, nextReview: Date.now(), reviewCount: 0, mastered: false, wrongCount: 0, notes, groupId: gid }); saveData(); renderWordList(); ['inputKorean','inputChinese','inputPOS','inputExample','inputNotes'].forEach(id => document.getElementById(id).value = ''); document.getElementById('inputGroup').value = ''; updateStats(); populateSpellGroupFilter(); populateReviewGroupFilter(); playSoundEffect('add'); }
-        function batchAddWords() { let text = document.getElementById('batchInput').value.trim(); if (!text) return; let lines = text.split('\n').filter(l => l.trim()), book = getActiveBook(), added = 0, skipped = 0; let gid = document.getElementById('batchGroup').value.trim() || DEFAULT_GROUP_ID; ensureDefaultGroup(); if (!book.groups.find(g => g.id === gid)) gid = DEFAULT_GROUP_ID; const nw = []; lines.forEach(line => { let parts = line.split(/[,\t]/); let kr = (parts[0] || '').trim(), zh = (parts[1] || '').trim(); if (!kr && !zh) return; if (kr && book.words.some(w => w.korean === kr)) { skipped++; return; } nw.push({ id: Date.now() + Math.random(), korean: kr, chinese: zh, pos: (parts[2] || '').trim(), example: (parts[3] || '').trim(), nextReview: Date.now(), reviewCount: 0, mastered: false, wrongCount: 0, notes: '', groupId: gid }); added++; }); nw.reverse().forEach(w => book.words.unshift(w)); saveData(); renderWordList(); document.getElementById('batchInput').value = ''; updateStats(); populateSpellGroupFilter(); populateReviewGroupFilter(); playSoundEffect('add'); alert(`批量导入完成！新增 ${added} 个单词，跳过 ${skipped} 个重复。`); }
-        function handleImport(event) { let file = event.target.files[0]; if (!file) return; let reader = new FileReader(); reader.onload = function(e) { let lines = e.target.result.split('\n').filter(l => l.trim()), book = getActiveBook(), ic = 0, skipped = 0; ensureDefaultGroup(); const nw = []; lines.forEach(line => { let parts = line.split(/[,\t]/); let kr = (parts[0] || '').trim(), zh = (parts[1] || '').trim(); if (!kr && !zh) return; if (kr && book.words.find(w => w.korean === kr)) { skipped++; return; } nw.push({ id: Date.now() + Math.random(), korean: kr, chinese: zh, pos: (parts[2] || '').trim(), example: (parts[3] || '').trim(), nextReview: Date.now(), reviewCount: 0, mastered: false, wrongCount: 0, notes: '', groupId: DEFAULT_GROUP_ID }); ic++; }); nw.reverse().forEach(w => book.words.unshift(w)); saveData(); renderWordList(); updateStats(); populateSpellGroupFilter(); populateReviewGroupFilter(); playSoundEffect('add'); alert(`导入完成！新增 ${ic} 个单词，跳过 ${skipped} 个重复。`); }; reader.readAsText(file); event.target.value = ''; }
+        function addWord() { if (appData.activeBookId === MASTERED_BOOK_ID) { alert('熟词箱为虚拟单词本，无法直接添加'); return; } let kr = document.getElementById('inputKorean').value.trim(), zh = document.getElementById('inputChinese').value.trim(), pos = document.getElementById('inputPOS').value.trim(), ex = document.getElementById('inputExample').value.trim(), gid = document.getElementById('inputGroup').value.trim() || null, notes = document.getElementById('inputNotes').value.trim(); if (!kr && !zh) { alert('请至少填写韩语或中文释义'); return; } let book = getActiveBook(); if (kr && book.words.some(w => w.korean === kr)) { alert('该韩语单词已存在'); return; } if (gid && !book.groups.find(g => g.id === gid)) gid = null; book.words.unshift({ id: Date.now(), korean: kr, chinese: zh, pos, example: ex, nextReview: Date.now(), reviewCount: 0, mastered: false, wrongCount: 0, notes, groupId: gid }); saveData(); renderWordList(); ['inputKorean','inputChinese','inputPOS','inputExample','inputNotes'].forEach(id => document.getElementById(id).value = ''); document.getElementById('inputGroup').value = ''; updateStats(); populateSpellGroupFilter(); populateReviewGroupFilter(); playSoundEffect('add'); }
+        function batchAddWords() { let text = document.getElementById('batchInput').value.trim(); if (!text) return; let lines = text.split('\n').filter(l => l.trim()), book = getActiveBook(), added = 0, skipped = 0; let gid = document.getElementById('batchGroup').value.trim() || null; if (gid && !book.groups.find(g => g.id === gid)) gid = null; const nw = []; lines.forEach(line => { let parts = line.split(/[,\t]/); let kr = (parts[0] || '').trim(), zh = (parts[1] || '').trim(); if (!kr && !zh) return; if (kr && book.words.some(w => w.korean === kr)) { skipped++; return; } nw.push({ id: Date.now() + Math.random(), korean: kr, chinese: zh, pos: (parts[2] || '').trim(), example: (parts[3] || '').trim(), nextReview: Date.now(), reviewCount: 0, mastered: false, wrongCount: 0, notes: '', groupId: gid }); added++; }); nw.reverse().forEach(w => book.words.unshift(w)); saveData(); renderWordList(); document.getElementById('batchInput').value = ''; updateStats(); populateSpellGroupFilter(); populateReviewGroupFilter(); playSoundEffect('add'); alert(`批量导入完成！新增 ${added} 个单词，跳过 ${skipped} 个重复。`); }
+        function handleImport(event) { let file = event.target.files[0]; if (!file) return; let reader = new FileReader(); reader.onload = function(e) { let lines = e.target.result.split('\n').filter(l => l.trim()), book = getActiveBook(), ic = 0, skipped = 0; const nw = []; lines.forEach(line => { let parts = line.split(/[,\t]/); let kr = (parts[0] || '').trim(), zh = (parts[1] || '').trim(); if (!kr && !zh) return; if (kr && book.words.find(w => w.korean === kr)) { skipped++; return; } nw.push({ id: Date.now() + Math.random(), korean: kr, chinese: zh, pos: (parts[2] || '').trim(), example: (parts[3] || '').trim(), nextReview: Date.now(), reviewCount: 0, mastered: false, wrongCount: 0, notes: '', groupId: null }); ic++; }); nw.reverse().forEach(w => book.words.unshift(w)); saveData(); renderWordList(); updateStats(); populateSpellGroupFilter(); populateReviewGroupFilter(); playSoundEffect('add'); alert(`导入完成！新增 ${ic} 个单词，跳过 ${skipped} 个重复。`); }; reader.readAsText(file); event.target.value = ''; }
         function exportBook() { let book = getActiveBook(), csv = '韩文,释义,词性,例句,笔记\n'; book.words.forEach(w => csv += `${w.korean},${w.chinese},${w.pos||''},${w.example||''},${w.notes||''}\n`); let blob = new Blob([csv], { type: 'text/csv;charset=utf-8' }), url = URL.createObjectURL(blob), a = document.createElement('a'); a.href = url; a.download = `${book.name}.csv`; a.click(); URL.revokeObjectURL(url); }
         function exportAllData() { let eo = { version: 'v11', exportedAt: new Date().toISOString(), data: JSON.parse(JSON.stringify(appData)) }, js = JSON.stringify(eo, null, 2), blob = new Blob([js], { type: 'application/json;charset=utf-8' }), url = URL.createObjectURL(blob), a = document.createElement('a'); a.href = url; a.download = `korean-backup-${new Date().toISOString().slice(0,10)}.json`; a.click(); URL.revokeObjectURL(url); }
 
-        // 导入 JSON（合并模式）
+        // 导入 JSON（合并模式，兼容无分组）
         function handleImportJson(event) {
             let file = event.target.files[0]; if (!file) return;
             let reader = new FileReader();
@@ -653,28 +655,21 @@
                                         const importedGroup = importedBook.groups.find(g => g.id === iw.groupId);
                                         if (importedGroup) {
                                             const targetGroup = existingBook.groups.find(g => g.name === importedGroup.name);
-                                            iw.groupId = targetGroup ? targetGroup.id : DEFAULT_GROUP_ID;
-                                        } else { iw.groupId = DEFAULT_GROUP_ID; }
-                                    } else { iw.groupId = DEFAULT_GROUP_ID; }
+                                            iw.groupId = targetGroup ? targetGroup.id : null;
+                                        } else { iw.groupId = null; }
+                                    } else { iw.groupId = null; }
                                     existingBook.words.push(iw);
                                 }
                             });
                             if (importedBook.groups && existingBook.groups) {
                                 importedBook.groups.forEach(ig => {
-                                    if (ig.id === DEFAULT_GROUP_ID) return;
                                     const existsGroup = existingBook.groups.find(eg => eg.name === ig.name);
                                     if (!existsGroup) { existingBook.groups.push({ id: ig.id, name: ig.name }); }
                                 });
                             }
-                            if (!existingBook.groups.find(g => g.id === DEFAULT_GROUP_ID)) {
-                                existingBook.groups.unshift({ id: DEFAULT_GROUP_ID, name: DEFAULT_GROUP_NAME });
-                            }
                         } else {
-                            if (!importedBook.groups || !importedBook.groups.find(g => g.id === DEFAULT_GROUP_ID)) {
-                                if (!importedBook.groups) importedBook.groups = [];
-                                importedBook.groups.unshift({ id: DEFAULT_GROUP_ID, name: DEFAULT_GROUP_NAME });
-                            }
-                            importedBook.words.forEach(w => { if (!w.groupId || !importedBook.groups.find(g => g.id === w.groupId)) { w.groupId = DEFAULT_GROUP_ID; } });
+                            if (!importedBook.groups) importedBook.groups = [];
+                            importedBook.words.forEach(w => { if (w.groupId && !importedBook.groups.find(g => g.id === w.groupId)) { w.groupId = null; } });
                             appData.books.push(importedBook);
                         }
                     });
@@ -687,7 +682,7 @@
             reader.readAsText(file); event.target.value = '';
         }
 
-        // 单词列表渲染与交互
+        // 单词列表渲染与交互（支持无分组显示）
         function toggleGroupCollapse(groupId) { if (!appData.collapsedGroups) appData.collapsedGroups = {}; appData.collapsedGroups[groupId] = !appData.collapsedGroups[groupId]; saveData(); renderWordList(); }
         function toggleWordExpand(e, wordId) { e.stopPropagation(); if (expandedWordIds.has(wordId)) { expandedWordIds.delete(wordId); } else { expandedWordIds.add(wordId); const w = getWords().find(w => String(w.id) === String(wordId)); if (w && w.korean) { speak(w.korean); } } renderWordList(); }
         function toggleAllMeanings() { showAllMeanings = !showAllMeanings; if (showAllMeanings) { const words = appData.showMastered ? getActiveBook().words.filter(w => w.mastered) : getActiveBook().words.filter(w => !w.mastered); words.forEach(w => expandedWordIds.add(String(w.id))); } else { expandedWordIds.clear(); } updateToggleAllMeaningsBtn(); renderWordList(); }
@@ -698,7 +693,7 @@
         function toggleSelectWord(e, wordId) { e.stopPropagation(); if (selectedWordIds.has(wordId)) { selectedWordIds.delete(wordId); } else { selectedWordIds.add(wordId); } updateBatchBar(); renderWordList(); }
         function clearSelection() { selectedWordIds.clear(); updateBatchBar(); renderWordList(); }
         function updateBatchBar() { const bar = document.getElementById('batchActionBar'); const countEl = document.getElementById('selectedCount'); const selAll = document.getElementById('selectAllCheckbox'); if (bar) { if (selectedWordIds.size > 0) { bar.style.display = 'flex'; countEl.innerText = `已选 ${selectedWordIds.size} 个`; const words = appData.showMastered ? getActiveBook().words.filter(w => w.mastered) : getActiveBook().words.filter(w => !w.mastered); if (selAll) selAll.checked = selectedWordIds.size === words.length; } else { bar.style.display = 'none'; if (selAll) selAll.checked = false; } } populateGroupSelects(); }
-        function batchMoveWords() { const targetGroup = document.getElementById('batchMoveGroup')?.value; if (!targetGroup || selectedWordIds.size === 0) { alert('请选择目标分组和单词'); return; } const book = getActiveBook(); if (book.id === MASTERED_BOOK_ID) { alert('熟词箱不支持移动'); return; } book.words.forEach(w => { if (selectedWordIds.has(String(w.id))) { w.groupId = targetGroup; } }); selectedWordIds.clear(); saveData(); updateBatchBar(); renderWordList(); populateSpellGroupFilter(); populateReviewGroupFilter(); playSoundEffect('click'); }
+        function batchMoveWords() { const targetGroup = document.getElementById('batchMoveGroup')?.value; if (!targetGroup || selectedWordIds.size === 0) { alert('请选择目标分组和单词'); return; } const book = getActiveBook(); if (book.id === MASTERED_BOOK_ID) { alert('熟词箱不支持移动'); return; } const finalGroupId = targetGroup === '__none__' ? null : targetGroup; book.words.forEach(w => { if (selectedWordIds.has(String(w.id))) { w.groupId = finalGroupId; } }); selectedWordIds.clear(); saveData(); updateBatchBar(); renderWordList(); populateSpellGroupFilter(); populateReviewGroupFilter(); playSoundEffect('click'); }
         function batchDeleteWords() { if (selectedWordIds.size === 0) { alert('请先选择单词'); return; } if (!confirm(`确定删除选中的 ${selectedWordIds.size} 个单词吗？`)) return; const book = getActiveBook(); if (book.id === MASTERED_BOOK_ID) { appData.books.forEach(b => { b.words = b.words.filter(w => !selectedWordIds.has(String(w.id))); }); } else { book.words = book.words.filter(w => !selectedWordIds.has(String(w.id))); } selectedWordIds.forEach(id => expandedWordIds.delete(String(id))); selectedWordIds.clear(); saveData(); updateBatchBar(); renderWordList(); populateSpellGroupFilter(); populateReviewGroupFilter(); if (currentActiveTab === 'review') loadReviewWord(); else if (currentActiveTab === 'spell') startSpell(); }
         function toggleMasterWord(e, wordId) { e.stopPropagation(); const w = getWords().find(w => String(w.id) === String(wordId)); if (!w) return; w.mastered = !w.mastered; saveData(); renderWordList(); if (currentActiveTab === 'review') loadReviewWord(); else if (currentActiveTab === 'spell') startSpell(); playSoundEffect('click'); }
         function handleDragStart(e) { dragSrcId = e.target.closest('.word-row-item')?.id.replace('word-row-', ''); e.target.closest('.word-row-item')?.classList.add('dragging'); e.dataTransfer.effectAllowed = 'move'; e.dataTransfer.setData('text/plain', dragSrcId); }
@@ -709,7 +704,6 @@
         function renderWordList() {
             const book = getActiveBook();
             const isVirtual = book.id === MASTERED_BOOK_ID;
-            const groups = isVirtual ? [] : (book.groups || []);
             let words = isVirtual ? book.words : (appData.showMastered ? book.words.filter(w => w.mastered) : book.words.filter(w => !w.mastered));
             updateWordListCount(); applyWordListCollapseState();
             if (isVirtual) {
@@ -720,29 +714,71 @@
                 }).join('') || '<div class="empty-message">暂无已掌握单词~</div>';
                 document.getElementById('wordListContainer').innerHTML = html;
             } else {
-                const gw = {}; groups.forEach(g => { gw[g.id] = []; });
-                words.forEach(w => { const gid = w.groupId && gw[w.groupId] !== undefined ? w.groupId : DEFAULT_GROUP_ID; if (!gw[gid]) gw[gid] = []; gw[gid].push(w); });
-                ensureDefaultGroup(); if (!gw[DEFAULT_GROUP_ID]) gw[DEFAULT_GROUP_ID] = [];
+                const groups = book.groups || [];
+                const gw = {};
+                // 初始化分组容器
+                groups.forEach(g => { gw[g.id] = []; });
+                gw['__ungrouped__'] = []; // 无分组单词存放处
+                words.forEach(w => {
+                    if (w.groupId && gw[w.groupId]) {
+                        gw[w.groupId].push(w);
+                    } else {
+                        gw['__ungrouped__'].push(w);
+                    }
+                });
                 function renderWordItem(w) {
                     const wid = String(w.id); const isExpanded = showAllMeanings || expandedWordIds.has(wid); const isSelected = selectedWordIds.has(wid);
                     const kd = w.korean || '<span class="placeholder-text">[未填写韩语]</span>'; const notesHtml = w.notes ? `📝 ${escapeHTML(w.notes)}` : '';
                     return `<div class="word-row-item${isSelected?' selected-row':''}" id="word-row-${wid}" draggable="true" ondragstart="handleDragStart(event)" ondragover="handleDragOver(event)" ondragleave="handleDragLeave(event)" ondrop="handleDrop(event)" ondragend="handleDragEnd(event)"><input type="checkbox" class="word-checkbox" ${isSelected?'checked':''} onclick="toggleSelectWord(event,'${wid}')" title="选择"><div class="word-row-item-left" onclick="toggleWordExpand(event,'${wid}')"><b>${kd}</b></div><div class="word-row-item-right"><button class="btn-sm-master${w.mastered?' mastered':''}" onclick="toggleMasterWord(event,'${wid}')" title="标记熟词">${w.mastered?'★':'☆'}</button><button class="btn-sm-edit" onclick="event.stopPropagation();showWordDetail('${wid}')" title="编辑"><svg width="14" height="14" viewBox="0 0 24 24" style="stroke:currentColor;fill:none;"><use href="#icon-edit-pencil"/></svg></button><button class="btn-sm-delete" onclick="event.stopPropagation();deleteWord('${wid}')" title="删除"><svg viewBox="0 0 24 24"><use href="#icon-trash-3"/></svg></button></div><div class="word-detail-expand${isExpanded?' show':''}" id="detail-${wid}"><span class="meaning-inline">${w.chinese||'<span class="placeholder-text">[未填写]</span>'}</span>${w.pos?`<span class="pos-badge-sm">${escapeHTML(w.pos)}</span>`:''}${notesHtml?`<span style="font-size:11px;color:var(--text-muted);margin-left:4px;">${notesHtml}</span>`:''}</div></div>`;
                 }
                 let html = '';
-                const sortedGroupIds = groups.map(g => g.id);
-                if (!sortedGroupIds.includes(DEFAULT_GROUP_ID)) sortedGroupIds.unshift(DEFAULT_GROUP_ID);
-                sortedGroupIds.forEach(gid => {
-                    const gWords = gw[gid] || []; if (gWords.length === 0 && gid !== DEFAULT_GROUP_ID) return;
-                    const g = groups.find(gr => gr.id === gid); const gName = g ? g.name : DEFAULT_GROUP_NAME;
-                    const isCollapsed = appData.collapsedGroups && appData.collapsedGroups[gid];
-                    const allExpanded = gWords.length > 0 && gWords.every(w => expandedWordIds.has(String(w.id)));
-                    const allSelected = gWords.length > 0 && gWords.every(w => selectedWordIds.has(String(w.id)));
-                    html += `<div class="group-header${isCollapsed?' collapsed':''}"><span onclick="toggleGroupCollapse('${escapeHTML(gid)}')"><span class="group-arrow">▾</span> 📁 ${escapeHTML(gName)} <span style="font-size:11px;color:var(--text-muted);font-weight:400;">(${gWords.length}词)</span></span><span style="display:flex;gap:4px;align-items:center;"><input type="checkbox" class="word-checkbox" ${allSelected?'checked':''} onclick="toggleSelectGroup('${escapeHTML(gid)}')" title="全选该组" style="width:16px;height:16px;"><button class="btn-sm" onclick="toggleGroupMeanings(event,'${escapeHTML(gid)}')" style="font-size:10px;padding:3px 8px;">${allExpanded?'隐藏释义':'显示释义'}</button></span></div>`;
-                    html += `<div class="group-words${isCollapsed?' collapsed':''}" id="group-words-${escapeHTML(gid)}">${gWords.map(renderWordItem).join('') || '<div class="empty-message" style="padding:8px;">这里还没有单词哦~</div>'}</div>`;
+                // 先显示无分组单词
+                if (gw['__ungrouped__'].length > 0) {
+                    const gWords = gw['__ungrouped__'];
+                    const allExpanded = gWords.every(w => expandedWordIds.has(String(w.id)));
+                    const allSelected = gWords.every(w => selectedWordIds.has(String(w.id)));
+                    html += `<div class="group-header"><span><span class="group-arrow" style="visibility:hidden;">▾</span> 📁 无分组 <span style="font-size:11px;color:var(--text-muted);font-weight:400;">(${gWords.length}词)</span></span><span style="display:flex;gap:4px;align-items:center;"><input type="checkbox" class="word-checkbox" ${allSelected?'checked':''} onclick="toggleSelectWordBatch('__ungrouped__')" title="全选该组" style="width:16px;height:16px;"><button class="btn-sm" onclick="toggleUngroupedMeanings(event)" style="font-size:10px;padding:3px 8px;">${allExpanded?'隐藏释义':'显示释义'}</button></span></div>`;
+                    html += `<div class="group-words">${gWords.map(renderWordItem).join('')}</div>`;
+                }
+                // 再显示各分组
+                groups.forEach(g => {
+                    const gWords = gw[g.id] || [];
+                    if (gWords.length === 0) return;
+                    const isCollapsed = appData.collapsedGroups && appData.collapsedGroups[g.id];
+                    const allExpanded = gWords.every(w => expandedWordIds.has(String(w.id)));
+                    const allSelected = gWords.every(w => selectedWordIds.has(String(w.id)));
+                    html += `<div class="group-header${isCollapsed?' collapsed':''}"><span onclick="toggleGroupCollapse('${escapeHTML(g.id)}')"><span class="group-arrow">▾</span> 📁 ${escapeHTML(g.name)} <span style="font-size:11px;color:var(--text-muted);font-weight:400;">(${gWords.length}词)</span></span><span style="display:flex;gap:4px;align-items:center;"><input type="checkbox" class="word-checkbox" ${allSelected?'checked':''} onclick="toggleSelectGroup('${escapeHTML(g.id)}')" title="全选该组" style="width:16px;height:16px;"><button class="btn-sm" onclick="toggleGroupMeanings(event,'${escapeHTML(g.id)}')" style="font-size:10px;padding:3px 8px;">${allExpanded?'隐藏释义':'显示释义'}</button></span></div>`;
+                    html += `<div class="group-words${isCollapsed?' collapsed':''}" id="group-words-${escapeHTML(g.id)}">${gWords.map(renderWordItem).join('')}</div>`;
                 });
                 document.getElementById('wordListContainer').innerHTML = html || '<div class="empty-message">还没有单词哦~</div>';
             }
             applyWordListCollapseState(); populateGroupSelects(); updateBatchBar();
+        }
+        // 辅助函数：切换无分组单词的全选
+        function toggleSelectWordBatch(type) {
+            if (type === '__ungrouped__') {
+                const book = getActiveBook();
+                const ungroupedWords = (appData.showMastered ? book.words.filter(w => w.mastered) : book.words.filter(w => !w.mastered)).filter(w => !w.groupId);
+                const allSelected = ungroupedWords.every(w => selectedWordIds.has(String(w.id)));
+                if (allSelected) {
+                    ungroupedWords.forEach(w => selectedWordIds.delete(String(w.id)));
+                } else {
+                    ungroupedWords.forEach(w => selectedWordIds.add(String(w.id)));
+                }
+                updateBatchBar(); renderWordList();
+            }
+        }
+        function toggleUngroupedMeanings(e) {
+            e.stopPropagation();
+            const book = getActiveBook();
+            const ungroupedWords = (appData.showMastered ? book.words.filter(w => w.mastered) : book.words.filter(w => !w.mastered)).filter(w => !w.groupId);
+            const allExpanded = ungroupedWords.every(w => expandedWordIds.has(String(w.id)));
+            if (allExpanded) {
+                ungroupedWords.forEach(w => expandedWordIds.delete(String(w.id)));
+            } else {
+                ungroupedWords.forEach(w => expandedWordIds.add(String(w.id)));
+            }
+            renderWordList();
         }
         function deleteWord(id) { if (!confirm('确定删除这个单词吗？')) return; const book = getActiveBook(); if (book.id === MASTERED_BOOK_ID) { appData.books.forEach(b => { b.words = b.words.filter(w => String(w.id) !== String(id)); }); } else { book.words = book.words.filter(w => w.id != id); } expandedWordIds.delete(String(id)); selectedWordIds.delete(String(id)); saveData(); updateBatchBar(); renderWordList(); populateSpellGroupFilter(); populateReviewGroupFilter(); if (currentActiveTab === 'review') loadReviewWord(); else if (currentActiveTab === 'spell') startSpell(); }
         function showWordDetail(id) { let w = getWords().find(w => String(w.id) === String(id)); if (!w) { for (let b of appData.books) { w = b.words.find(w => String(w.id) === String(id)); if (w) break; } if (!w) return; } editingWordId = id; document.getElementById('detailKorean').innerText = w.korean; document.getElementById('editChinese').value = w.chinese; document.getElementById('editPOS').value = w.pos || ''; document.getElementById('editExample').value = w.example || ''; document.getElementById('editNotes').value = w.notes || ''; document.getElementById('wordDetailPopup').style.display = 'flex'; playSoundEffect('click'); }
@@ -763,9 +799,9 @@
                 const groups = b.groups || [];
                 b.words.forEach(w => {
                     if (w.korean.toLowerCase().includes(q) || w.chinese.toLowerCase().includes(q) || (w.notes && w.notes.toLowerCase().includes(q))) {
-                        let groupName = '';
-                        if (w.groupId) { const g = groups.find(gr => gr.id === w.groupId); groupName = g ? g.name : ''; }
-                        results.push({ ...w, bookName: b.name, groupName: groupName || '默认词组' });
+                        let groupName = '无分组';
+                        if (w.groupId) { const g = groups.find(gr => gr.id === w.groupId); groupName = g ? g.name : '无分组'; }
+                        results.push({ ...w, bookName: b.name, groupName: groupName });
                     }
                 });
             });
@@ -809,10 +845,10 @@
         function saveOrderSettings() { const reviewSel = document.getElementById('reviewOrderSelect'); const spellSel = document.getElementById('spellOrderSelect'); if (reviewSel) appData.settings.reviewOrder = reviewSel.value; if (spellSel) appData.settings.spellOrder = spellSel.value; saveData(); if (currentActiveTab === 'review') loadReviewWord(); else if (currentActiveTab === 'spell') startSpell(); }
         function applyOrderOptions() { const reviewSel = document.getElementById('reviewOrderSelect'); const spellSel = document.getElementById('spellOrderSelect'); if (reviewSel) reviewSel.value = appData.settings.reviewOrder || 'random'; if (spellSel) spellSel.value = appData.settings.spellOrder || 'random'; }
         function checkBackupReminder() { if (!appData.settings.backupReminderEnabled) return; const lastBackup = appData.stats.lastBackupDate ? new Date(appData.stats.lastBackupDate) : null; const now = new Date(); if (!lastBackup || (now - lastBackup) > BACKUP_REMINDER_DAYS * 24 * 60 * 60 * 1000) { if (confirm('📦 距离上次备份已超过7天，建议立即导出备份数据以确保安全。是否现在导出？')) { exportAllData(); } appData.stats.lastBackupDate = now.toISOString(); saveData(); } }
-        function switchTab(tab) { currentActiveTab = tab; document.querySelectorAll('.page').forEach(p => p.classList.remove('active')); document.querySelectorAll('.nav-item').forEach(b => b.classList.remove('active')); const pe = document.getElementById(tab + 'Page'); const ne = document.querySelector(`.nav-item[data-tab="${tab}"]`); if (pe) pe.classList.add('active'); if (ne) ne.classList.add('active'); if (tab === 'review') { hideReviewCompleted(); document.getElementById('flipCard').style.display = 'block'; document.getElementById('actionButtons').style.display = 'flex'; document.getElementById('btnNextWord').style.display = 'none'; document.getElementById('reviewProgressWrap').style.display = 'block'; document.getElementById('reviewProgressText').style.display = 'block'; populateReviewGroupFilter(); loadReviewWord(); } else if (tab === 'spell') { populateSpellGroupFilter(); startSpell(); } else if (tab === 'manage') { ensureDefaultGroup(); migrateUngroupedWords(); updateBookDisplay(); renderWordList(); } else if (tab === 'profile') updateStats(); else if (tab === 'settings') { updateSettingsDisplay(); } }
+        function switchTab(tab) { currentActiveTab = tab; document.querySelectorAll('.page').forEach(p => p.classList.remove('active')); document.querySelectorAll('.nav-item').forEach(b => b.classList.remove('active')); const pe = document.getElementById(tab + 'Page'); const ne = document.querySelector(`.nav-item[data-tab="${tab}"]`); if (pe) pe.classList.add('active'); if (ne) ne.classList.add('active'); if (tab === 'review') { hideReviewCompleted(); document.getElementById('flipCard').style.display = 'block'; document.getElementById('actionButtons').style.display = 'flex'; document.getElementById('btnNextWord').style.display = 'none'; document.getElementById('reviewProgressWrap').style.display = 'block'; document.getElementById('reviewProgressText').style.display = 'block'; populateReviewGroupFilter(); loadReviewWord(); } else if (tab === 'spell') { populateSpellGroupFilter(); startSpell(); } else if (tab === 'manage') { updateBookDisplay(); renderWordList(); } else if (tab === 'profile') updateStats(); else if (tab === 'settings') { updateSettingsDisplay(); } }
         document.querySelectorAll('.nav-item').forEach(b => b.addEventListener('click', () => switchTab(b.dataset.tab)));
         document.addEventListener('visibilitychange', () => { if (document.hidden) { stopGoogleAudio(); speechSynth.cancel(); } });
-        async function init() { initData(); await loadVoices(); selectVoice(appData.settings.selectedVoiceURI); applySettings(); updateBookDisplay(); ensureDefaultGroup(); ensureErrorBook(); migrateUngroupedWords(); populateSpellGroupFilter(); populateReviewGroupFilter(); updateToggleAllMeaningsBtn(); updateSpeakerIcons(); initKeyboard(); initAudioContextOnInteraction(); switchTab('review'); }
+        async function init() { initData(); await loadVoices(); selectVoice(appData.settings.selectedVoiceURI); applySettings(); updateBookDisplay(); ensureErrorBook(); populateSpellGroupFilter(); populateReviewGroupFilter(); updateToggleAllMeaningsBtn(); updateSpeakerIcons(); initKeyboard(); initAudioContextOnInteraction(); switchTab('review'); }
         init();
     </script>
 </body>
