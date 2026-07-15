@@ -735,39 +735,75 @@
         function handleImport(event) { let file = event.target.files[0]; if (!file) return; let reader = new FileReader(); reader.onload = function(e) { let lines = e.target.result.split('\n').filter(l => l.trim()), book = getActiveBook(), ic = 0, skipped = 0; ensureDefaultGroup(); const nw = []; lines.forEach(line => { let parts = line.split(/[,\t]/); let kr = (parts[0] || '').trim(), zh = (parts[1] || '').trim(); if (!kr && !zh) return; if (kr && book.words.find(w => w.korean === kr)) { skipped++; return; } nw.push({ id: Date.now() + Math.random(), korean: kr, chinese: zh, pos: (parts[2] || '').trim(), example: (parts[3] || '').trim(), nextReview: Date.now(), reviewCount: 0, mastered: false, wrongCount: 0, notes: '', groupId: DEFAULT_GROUP_ID }); ic++; }); nw.reverse().forEach(w => book.words.unshift(w)); saveData(); renderWordList(); updateStats(); populateSpellGroupFilter(); populateReviewGroupFilter(); playSoundEffect('add'); alert(`导入完成！新增 ${ic} 个单词，跳过 ${skipped} 个重复。`); }; reader.readAsText(file); event.target.value = ''; }
         function exportBook() { let book = getActiveBook(), csv = '韩文,释义,词性,例句,笔记\n'; book.words.forEach(w => csv += `${w.korean},${w.chinese},${w.pos||''},${w.example||''},${w.notes||''}\n`); let blob = new Blob([csv], { type: 'text/csv;charset=utf-8' }), url = URL.createObjectURL(blob), a = document.createElement('a'); a.href = url; a.download = `${book.name}.csv`; a.click(); URL.revokeObjectURL(url); }
         function exportAllData() { let eo = { version: 'v11', exportedAt: new Date().toISOString(), data: JSON.parse(JSON.stringify(appData)) }, js = JSON.stringify(eo, null, 2), blob = new Blob([js], { type: 'application/json;charset=utf-8' }), url = URL.createObjectURL(blob), a = document.createElement('a'); a.href = url; a.download = `korean-backup-${new Date().toISOString().slice(0,10)}.json`; a.click(); URL.revokeObjectURL(url); }
-        function handleImportJson(event) {
-            let file = event.target.files[0]; if (!file) return;
-            if (!confirm('⚠️ 导入将覆盖当前所有数据，导入前是否自动导出备份？')) return;
-            // 自动备份
-            try { exportAllData(); } catch(e) {}
-            let reader = new FileReader();
-            reader.onload = function(e) {
-                try {
-                    let io = JSON.parse(e.target.result), id = io.data || io;
-                    if (!id.books || !id.settings) { alert('❌ 无效的备份文件格式'); return; }
-                    if (!confirm('确定覆盖当前数据吗？')) return;
-                    appData = id;
-                    appData.books.forEach(b => { if (!b.groups) b.groups = []; if (b.color === undefined) b.color = '#f7a8c4'; b.words.forEach(w => { if (w.tags && !w.notes) { w.notes = (w.tags || []).join(','); delete w.tags; } if (!w.notes) w.notes = ''; if (w.groupId === undefined) w.groupId = null; }); });
-                    if (!appData.stats) appData.stats = { checkIns: [], todayNewCount: 0, todayReviewCount: 0, todayCorrect: 0, todayTotal: 0, streak: 0, dailyNewGoal: 10, lastBackupDate: null };
-                    if (!appData.settings.reviewIntervals) appData.settings.reviewIntervals = { hardMin: 10, fuzzyHr: 4, easyStages: [1,3,7,15,30] };
-                    if (!appData.settings.speakerIcon) appData.settings.speakerIcon = 'icon-speaker-e';
-                    if (!appData.settings.spellErrorCounts) appData.settings.spellErrorCounts = {};
-                    if (appData.settings.selectedVoiceURI === undefined) appData.settings.selectedVoiceURI = 'auto';
-                    if (appData.settings.soundEnabled === undefined) appData.settings.soundEnabled = true;
-                    if (appData.settings.autoReadOnReview === undefined) appData.settings.autoReadOnReview = false;
-                    if (appData.settings.backupReminderEnabled === undefined) appData.settings.backupReminderEnabled = true;
-                    if (appData.wordListCollapsed === undefined) appData.wordListCollapsed = false;
-                    if (!appData.collapsedGroups) appData.collapsedGroups = {};
-                    ensureDefaultGroup(); ensureErrorBook(); migrateUngroupedWords();
-                    saveData(); expandedWordIds.clear(); selectedWordIds.clear(); showAllMeanings = false;
-                    updateToggleAllMeaningsBtn(); updateMasteredFilterBtn(); applySettings();
-                    updateBookDisplay(); populateSpellGroupFilter(); populateReviewGroupFilter();
-                    renderWordList(); switchTab(currentActiveTab);
-                    alert('✅ 数据恢复成功！已自动备份原数据。');
-                } catch (err) { alert('❌ 文件解析失败：' + err.message); }
-            };
-            reader.readAsText(file); event.target.value = '';
+       function handleImportJson(event) {
+    let file = event.target.files[0]; if (!file) return;
+    let reader = new FileReader();
+    reader.onload = function(e) {
+        try {
+            let raw = JSON.parse(e.target.result);
+            // 兼容新旧两种导出格式：新格式有 data 属性包裹，旧格式直接就是 appData
+            let data = raw.data || raw;
+            
+            // 最基本的结构检查，只要有 books 就尝试恢复
+            if (!data.books || !Array.isArray(data.books)) {
+                alert('❌ 无效的备份文件格式（缺少单词本数据）'); return;
+            }
+            
+            if (!confirm('⚠️ 导入将覆盖当前所有数据，确定继续吗？（建议先导出备份）')) return;
+            
+            // 自动补全可能缺失的字段
+            data.books.forEach(b => {
+                if (!b.groups) b.groups = [];
+                if (!b.color) b.color = '#f7a8c4';
+                b.words.forEach(w => {
+                    if (!w.notes) w.notes = '';
+                    if (w.groupId === undefined) w.groupId = DEFAULT_GROUP_ID;
+                });
+            });
+            
+            // stats 缺失字段补全
+            if (!data.stats) data.stats = {};
+            if (!data.stats.checkIns) data.stats.checkIns = [];
+            if (data.stats.todayNewCount === undefined) data.stats.todayNewCount = 0;
+            if (data.stats.todayReviewCount === undefined) data.stats.todayReviewCount = 0;
+            if (data.stats.todayCorrect === undefined) data.stats.todayCorrect = 0;
+            if (data.stats.todayTotal === undefined) data.stats.todayTotal = 0;
+            if (data.stats.streak === undefined) data.stats.streak = 0;
+            if (data.stats.dailyNewGoal === undefined) data.stats.dailyNewGoal = 10;
+            if (!data.stats.lastBackupDate) data.stats.lastBackupDate = null;
+            
+            // settings 缺失字段补全
+            if (!data.settings) data.settings = {};
+            if (!data.settings.reviewIntervals) data.settings.reviewIntervals = { hardMin: 10, fuzzyHr: 4, easyStages: [1,3,7,15,30] };
+            if (!data.settings.speakerIcon) data.settings.speakerIcon = 'icon-speaker-e';
+            if (!data.settings.spellErrorCounts) data.settings.spellErrorCounts = {};
+            if (data.settings.selectedVoiceURI === undefined) data.settings.selectedVoiceURI = 'auto';
+            if (data.settings.soundEnabled === undefined) data.settings.soundEnabled = true;
+            if (data.settings.autoReadOnReview === undefined) data.settings.autoReadOnReview = false;
+            if (data.settings.backupReminderEnabled === undefined) data.settings.backupReminderEnabled = true;
+            if (!data.settings.reviewOrder) data.settings.reviewOrder = 'random';
+            if (!data.settings.spellOrder) data.settings.spellOrder = 'random';
+            
+            appData = data;
+            saveData();
+            expandedWordIds.clear(); selectedWordIds.clear();
+            showAllMeanings = false;
+            updateToggleAllMeaningsBtn();
+            updateMasteredFilterBtn();
+            applySettings();
+            updateBookDisplay();
+            populateSpellGroupFilter();
+            populateReviewGroupFilter();
+            renderWordList();
+            switchTab(currentActiveTab);
+            alert('✅ 数据恢复成功！');
+        } catch (err) {
+            alert('❌ 文件解析失败：' + err.message);
         }
+    };
+    reader.readAsText(file);
+    event.target.value = '';
+}
         function toggleGroupCollapse(groupId) { if (!appData.collapsedGroups) appData.collapsedGroups = {}; appData.collapsedGroups[groupId] = !appData.collapsedGroups[groupId]; saveData(); renderWordList(); }
         function toggleWordExpand(e, wordId) { e.stopPropagation(); if (expandedWordIds.has(wordId)) { expandedWordIds.delete(wordId); } else { expandedWordIds.add(wordId); const w = getWords().find(w => String(w.id) === String(wordId)); if (w && w.korean) { speak(w.korean); } } renderWordList(); }
         function toggleAllMeanings() { showAllMeanings = !showAllMeanings; if (showAllMeanings) { const words = appData.showMastered ? getActiveBook().words.filter(w => w.mastered) : getActiveBook().words.filter(w => !w.mastered); words.forEach(w => expandedWordIds.add(String(w.id))); } else { expandedWordIds.clear(); } updateToggleAllMeaningsBtn(); renderWordList(); }
