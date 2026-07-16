@@ -469,17 +469,27 @@ body.dark .btn-wrong-again {
         <div class="modal" id="bookListPopup" onclick="closeBookList(event)"><div class="modal-content" onclick="event.stopPropagation()">
                 <h3>📒 单词本</h3><div id="bookListContainer"></div>
                 <input class="input-field" id="newBookName" placeholder="新建单词本">
-                <div class="color-picker" id="newBookColorPicker">
-                    <div class="color-picker-option selected" style="background: #f7a8c4;" data-color="#f7a8c4"></div>
-                    <div class="color-picker-option" style="background: #a4c8e0;" data-color="#a4c8e0"></div>
-                    <div class="color-picker-option" style="background: #b0d0a0;" data-color="#b0d0a0"></div>
-                    <div class="color-picker-option" style="background: #f0c060;" data-color="#f0c060"></div>
-                    <div class="color-picker-option" style="background: #c0a0e0;" data-color="#c0a0e0"></div>
-                    <div class="color-picker-option" style="background: #e0a0a0;" data-color="#e0a0a0"></div>
-                </div>
+                <div class="color-picker" id="newBookColorPicker" style="display: flex; flex-wrap: wrap; gap: 8px; justify-content: center;">
+    <div class="color-picker-option selected" style="background: #f9c2c9;" data-color="#f9c2c9"></div>
+    <div class="color-picker-option" style="background: #f5a26a;" data-color="#f5a26a"></div>
+    <div class="color-picker-option" style="background: #fad65a;" data-color="#fad65a"></div>
+    <div class="color-picker-option" style="background: #7ecb7e;" data-color="#7ecb7e"></div>
+    <div class="color-picker-option" style="background: #66becb;" data-color="#66becb"></div>
+    <div class="color-picker-option" style="background: #63a8df;" data-color="#63a8df"></div>
+    <div class="color-picker-option" style="background: #a685d6;" data-color="#a685d6"></div>
+    <div class="color-picker-option" style="background: #cccccc;" data-color="#cccccc"></div>
+</div>
                 <button class="btn-primary" onclick="createNewBook()">创建</button><button class="btn-primary" style="background:#ccc;margin-top:6px;" onclick="closeBookListDirect()">关闭</button></div></div>
         <div class="modal" id="searchPopup" onclick="closeSearch(event)"><div class="modal-content" onclick="event.stopPropagation()"><h3>🔍 全局搜索</h3><input class="input-field" id="searchInput" placeholder="输入韩文或中文" oninput="doSearch()"><div id="searchResults" style="max-height:50vh;overflow-y:auto;"></div><button class="btn-primary" onclick="closeSearchDirect()">关闭</button></div></div>
         <div class="modal" id="groupManagerPopup" onclick="closeGroupManager(event)"><div class="modal-content" onclick="event.stopPropagation()"><h3>📁 管理分组</h3><p style="font-size:12px;color:var(--text-muted);margin-bottom:8px;">当前单词本：<b id="gmBookName"></b></p><div id="groupManagerList"></div><div class="filter-row"><input class="input-field" id="newGroupNameInput" placeholder="新建分组名称" style="flex:1;margin-bottom:0;"><button class="btn-primary" onclick="addNewGroup()" style="width:auto;flex-shrink:0;">➕ 添加</button></div><button class="btn-primary" style="background:#ccc;margin-top:8px;" onclick="closeGroupManagerDirect()">关闭</button></div></div>
+<!-- 颜色选择弹窗（色块面板） -->
+<div class="modal" id="colorPickerPopup" onclick="closeColorPicker(event)">
+    <div class="modal-content" onclick="event.stopPropagation()">
+        <h3>🎨 选择单词本颜色</h3>
+        <div id="colorGrid" style="display:grid; grid-template-columns: repeat(5, 1fr); gap:10px; margin:12px 0;"></div>
+        <button class="btn-secondary" onclick="closeColorPickerDirect()" style="margin-top:8px;">取消</button>
+    </div>
+</div>
     </div>
 
     <script>
@@ -707,11 +717,81 @@ body.dark .btn-wrong-again {
         function renderBookListPopup() { let html = appData.books.map((b, idx) => { const isActive = b.id === appData.activeBookId; const color = b.color || '#f7a8c4'; return `<div class="book-entry" draggable="true" id="book-${escapeHTML(b.id)}" ondragstart="handleBookDragStart(event)" ondragover="handleBookDragOver(event)" ondrop="handleBookDrop(event)" ondragend="handleBookDragEnd(event)" style="background:${isActive?'var(--group-bg)':'var(--card-bg)'};"><span onclick="switchBook('${escapeHTML(b.id)}')" style="cursor:pointer;flex:1;min-width:0;word-break:break-all;display:flex;align-items:center;"><span class="color-dot" style="background:${color};"></span>${escapeHTML(b.name)} (${b.words.length}词)</span><div style="display:flex;gap:2px;align-items:center;"><button onclick="event.stopPropagation();copyBook('${escapeHTML(b.id)}')" title="复制单词本" style="background:none;border:none;cursor:pointer;padding:4px;color:var(--text);"><svg width="16" height="16" viewBox="0 0 24 24" style="stroke:currentColor;fill:none;"><use href="#icon-copy"/></svg></button><button onclick="event.stopPropagation();editBookColor('${escapeHTML(b.id)}')" title="修改颜色" style="background:none;border:none;cursor:pointer;padding:4px;color:var(--text);">🎨</button><button onclick="event.stopPropagation();renameBook('${escapeHTML(b.id)}')" title="重命名" style="background:none;border:none;cursor:pointer;padding:4px;color:var(--text);"><svg width="16" height="16" viewBox="0 0 24 24" style="stroke:currentColor;fill:none;"><use href="#icon-edit-pencil"/></svg></button>${b.id===ERROR_BOOK_ID?'<span style="font-size:16px;color:var(--text-muted);padding:4px;">🔒</span>':`<button onclick="event.stopPropagation();deleteBook('${escapeHTML(b.id)}')" title="删除" style="background:none;border:none;cursor:pointer;padding:4px;color:var(--text);"><svg width="16" height="16" viewBox="0 0 24 24" style="stroke:currentColor;fill:none;"><use href="#icon-trash-3"/></svg></button>`}</div></div>`; }).join(''); document.getElementById('bookListContainer').innerHTML = html; const activeBook = appData.books.find(b => b.id === appData.activeBookId); document.querySelectorAll('#newBookColorPicker .color-picker-option').forEach(el => { el.classList.toggle('selected', el.dataset.color === (activeBook ? activeBook.color : '#f7a8c4')); el.onclick = function() { document.querySelectorAll('#newBookColorPicker .color-picker-option').forEach(e => e.classList.remove('selected')); this.classList.add('selected'); }; }); }
         function closeBookList(e) { if (e.target === document.getElementById('bookListPopup')) document.getElementById('bookListPopup').style.display = 'none'; }
         function closeBookListDirect() { document.getElementById('bookListPopup').style.display = 'none'; }
-        function getSelectedBookColor() { const sel = document.querySelector('#newBookColorPicker .color-picker-option.selected'); return sel ? sel.dataset.color : '#f7a8c4'; }
+       
         function switchBook(id) { appData.activeBookId = id; appData.settings.savedReviewGroup = ''; appData.settings.savedSpellGroup = ''; saveData(); updateBookDisplay(); expandedWordIds.clear(); selectedWordIds.clear(); showAllMeanings = false; updateToggleAllMeaningsBtn(); updateMasteredFilterBtn(); renderWordList(); closeBookListDirect(); populateSpellGroupFilter(); populateReviewGroupFilter(); if (currentActiveTab === 'review') loadReviewWord(); else if (currentActiveTab === 'spell') startSpell(); }
         function renameBook(id) { let book = appData.books.find(b => b.id === id); if (!book) return; let n = prompt('重命名单词本：', book.name); if (n && n.trim()) { book.name = n.trim(); saveData(); updateBookDisplay(); renderBookListPopup(); } }
-        function editBookColor(id) { let book = appData.books.find(b => b.id === id); if (!book) return; const colorInput = document.createElement('input'); colorInput.type = 'color'; colorInput.value = book.color || '#f7a8c4'; colorInput.style.position = 'fixed'; colorInput.style.top = '-100px'; colorInput.style.left = '-100px'; colorInput.style.width = '0'; colorInput.style.height = '0'; colorInput.style.opacity = '0'; colorInput.style.pointerEvents = 'none'; colorInput.style.zIndex = '9999'; document.body.appendChild(colorInput); let colorChanged = false; const handleChange = function() { colorChanged = true; book.color = colorInput.value; saveData(); updateBookDisplay(); renderBookListPopup(); renderWordList(); }; colorInput.addEventListener('input', handleChange); colorInput.addEventListener('change', function() { if (colorChanged) handleChange(); cleanup(); }); const cleanup = function() { colorInput.removeEventListener('input', handleChange); if (document.body.contains(colorInput)) { document.body.removeChild(colorInput); } }; colorInput.addEventListener('blur', function() { setTimeout(() => { if (document.body.contains(colorInput)) { cleanup(); } }, 500); }); colorInput.click(); }
-        function createNewBook() { let n = document.getElementById('newBookName').value.trim(); if (!n) return; let id = Date.now().toString(); let color = getSelectedBookColor(); appData.books.push({ id, name: n, groups: [], words: [], color }); appData.activeBookId = id; appData.settings.savedReviewGroup = ''; appData.settings.savedSpellGroup = ''; saveData(); updateBookDisplay(); renderWordList(); renderBookListPopup(); document.getElementById('newBookName').value = ''; populateSpellGroupFilter(); populateReviewGroupFilter(); }
+        // 预设色块（可自由增删）
+const COLOR_PALETTE = [
+    // 粉/珊瑚系（4色）
+    '#f9c2c9', '#f4a3b1', '#e8879b', '#d96b82',
+    // 桃/橘系（4色）
+    '#fdd0b2', '#fbb995', '#f5a26a', '#e98c50',
+    // 黄/香槟系（4色）
+    '#fef0b5', '#fde68a', '#fad65a', '#f0c030',
+    // 绿/薄荷系（4色）
+    '#c7e6c7', '#a3d9a3', '#7ecb7e', '#58b958',
+    // 青/湖水系（4色）
+    '#b8dfe6', '#8fced9', '#66becb', '#3eaab8',
+    // 蓝/天蓝系（4色）
+    '#b3d4f0', '#8bbee8', '#63a8df', '#3e92d6',
+    // 紫/薰衣草系（4色）
+    '#d4c2ec', '#bda3e1', '#a685d6', '#8f68ca',
+    // 中性灰/暖白系（4色）
+    '#f5f5f5', '#e0e0e0', '#cccccc', '#b0b0b0'
+];
+let colorPickerTargetBookId = null;
+
+function editBookColor(id) {
+    const book = appData.books.find(b => b.id === id);
+    if (!book) return;
+    colorPickerTargetBookId = id;
+    
+
+    // 渲染色块网格
+    const grid = document.getElementById('colorGrid');
+        grid.innerHTML = COLOR_PALETTE.map(color => 
+    `<div style="width:100%; aspect-ratio:1; background:${color}; 
+          border-radius:16px; 
+          box-shadow: 0 4px 10px rgba(0,0,0,0.08), 0 1px 3px rgba(0,0,0,0.06);
+          border: 2px solid transparent; 
+          cursor:pointer; 
+          transition: all 0.2s ease;
+          transform: scale(1);"
+          onclick="applyColor('${color}')" 
+          onmouseover="this.style.borderColor='var(--accent)'; this.style.transform='scale(1.05)'; this.style.boxShadow='0 6px 14px rgba(0,0,0,0.12)'" 
+          onmouseout="this.style.borderColor='transparent'; this.style.transform='scale(1)'; this.style.boxShadow='0 4px 10px rgba(0,0,0,0.08), 0 1px 3px rgba(0,0,0,0.06)'">
+    </div>`
+).join('');
+    document.getElementById('colorPickerPopup').style.display = 'flex';
+}
+
+function applyColor(color) {
+    if (!colorPickerTargetBookId) return;
+    const book = appData.books.find(b => b.id === colorPickerTargetBookId);
+    if (!book) return;
+    book.color = color;
+    saveData();
+    updateBookDisplay();
+    renderBookListPopup();
+    renderWordList();
+    closeColorPickerDirect();
+}
+
+function closeColorPicker(e) {
+    if (e.target === document.getElementById('colorPickerPopup')) {
+        closeColorPickerDirect();
+    }
+}
+
+function closeColorPickerDirect() {
+    document.getElementById('colorPickerPopup').style.display = 'none';
+    colorPickerTargetBookId = null;
+}
+function getSelectedBookColor() {
+    const sel = document.querySelector('#newBookColorPicker .color-picker-option.selected');
+    return sel ? sel.dataset.color : '#f7a8c4';
+}
+        function createNewBook() { let n = document.getElementById('newBookName').value.trim(); if (!n) return; let id = Date.now().toString(); let color = getSelectedBookColor();appData.books.push({ id, name: n, groups: [], words: [], color }); appData.activeBookId = id; appData.settings.savedReviewGroup = ''; appData.settings.savedSpellGroup = ''; saveData(); updateBookDisplay(); renderWordList(); renderBookListPopup(); document.getElementById('newBookName').value = ''; populateSpellGroupFilter(); populateReviewGroupFilter(); }
         function deleteBook(id) { if (id === ERROR_BOOK_ID) { alert('错词本不可删除'); return; } if (appData.books.length <= 1) { alert('至少保留一个单词本'); return; } if (!confirm('确定删除？')) return; appData.books = appData.books.filter(b => b.id !== id); if (appData.activeBookId === id) appData.activeBookId = appData.books[0].id; appData.settings.savedReviewGroup = ''; appData.settings.savedSpellGroup = ''; saveData(); updateBookDisplay(); renderWordList(); renderBookListPopup(); populateSpellGroupFilter(); populateReviewGroupFilter(); if (currentActiveTab === 'review') loadReviewWord(); else if (currentActiveTab === 'spell') startSpell(); }
         function copyBook(id) { let book = appData.books.find(b => b.id === id); if (!book) return; let newBook = JSON.parse(JSON.stringify(book)); newBook.id = Date.now().toString(); newBook.name = book.name + ' 副本'; newBook.words.forEach(w => { w.id = Date.now() + Math.random(); }); newBook.groups.forEach(g => { g.id = 'g' + Date.now() + Math.random(); }); newBook.words.forEach(w => { if (w.groupId) { const oldGroupId = w.groupId; const newGroup = newBook.groups.find(ng => book.groups.find(og => og.id === oldGroupId)?.name === ng.name); w.groupId = newGroup ? newGroup.id : null; } }); appData.books.push(newBook); appData.activeBookId = newBook.id; appData.settings.savedReviewGroup = ''; appData.settings.savedSpellGroup = ''; saveData(); updateBookDisplay(); renderWordList(); renderBookListPopup(); populateSpellGroupFilter(); populateReviewGroupFilter(); }
         function handleBookDragStart(e) { bookDragSrcId = e.target.closest('.book-entry')?.id.replace('book-', ''); e.target.closest('.book-entry')?.classList.add('dragging'); e.dataTransfer.effectAllowed = 'move'; e.dataTransfer.setData('text/plain', bookDragSrcId); }
