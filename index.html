@@ -946,9 +946,9 @@
                 </div>
                 <div class="fade-hint-korean" id="spellFadeHint"></div>
                 <div class="spell-action-row">
-                    <button class="btn-primary" onclick="handleSpellAction()" id="spellCheckBtn">确认</button>
-                    <button class="btn-secondary" onclick="skipSpellWord()" id="spellSkipBtn">跳过</button>
-                </div>
+    <button class="btn-secondary" onclick="skipSpellWord()" id="spellSkipBtn">跳过</button>
+    <button class="btn-primary" onclick="handleSpellAction()" id="spellCheckBtn">确认</button>
+</div>
                 <div id="spellFeedback" style="margin-top:8px;font-size:16px;min-height:24px;"></div>
             </div>
         </div>
@@ -1313,16 +1313,22 @@
                 spellCurrentErrorCount++;
                 if(!appData.settings.spellErrorCounts) appData.settings.spellErrorCounts={};
                 appData.settings.spellErrorCounts[spellWord.korean]=(appData.settings.spellErrorCounts[spellWord.korean]||0)+1;
-                const totalErrors=appData.settings.spellErrorCounts[spellWord.korean];
-                document.getElementById('spellFeedback').innerHTML='<span class="incorrect">🙅‍♀️再试一次吧~</span>';
-                if(totalErrors>=SPELL_ERROR_THRESHOLD){
-                    document.getElementById('spellFadeHint').innerHTML=`💡 提示：<b>${escapeHTML(spellWord.korean)}</b>`;
-                    document.getElementById('spellFadeHint').style.opacity='0.8';
-                    addWordToErrorBook(spellWord.korean,spellWord.chinese,spellWord.pos||'',spellWord.example||'');
-                } else {
-                    document.getElementById('spellFadeHint').innerHTML='';
-                }
-                // 加入重试队列（去重）
+                const totalErrors = appData.settings.spellErrorCounts[spellWord.korean];
+document.getElementById('spellFeedback').innerHTML = '<span class="incorrect">🙅‍♀️再试一次吧~</span>';
+
+// 拼错2次就显示答案提示
+if (totalErrors >= 2) {
+    document.getElementById('spellFadeHint').innerHTML = `💡 提示：<b>${escapeHTML(spellWord.korean)}</b>`;
+    document.getElementById('spellFadeHint').style.opacity = '0.8';
+} else {
+    document.getElementById('spellFadeHint').innerHTML = '';
+}
+
+// 拼错4次才加入错词本
+if (totalErrors >= SPELL_ERROR_THRESHOLD) {
+    addWordToErrorBook(spellWord.korean, spellWord.chinese, spellWord.pos || '', spellWord.example || '');
+}  
+              // 加入重试队列（去重）
                 if(!spellErrorList.some(w=>w.id===spellWord.id)){
                     spellErrorList.push(spellWord);
                 }
