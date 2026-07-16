@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>韩语背单词 · 拼写优化版</title>
+    <title>韩语背单词 · 完整版</title>
     <link rel="manifest" href="data:application/manifest+json,%7B%22name%22%3A%22%E9%9F%A9%E8%AF%AD%E8%83%8C%E5%8D%95%E8%AF%8D%22%2C%22short_name%22%3A%22%E8%83%8C%E5%8D%95%E8%AF%8D%22%2C%22start_url%22%3A%22.%2F%22%2C%22display%22%3A%22standalone%22%2C%22background_color%22%3A%22%23fffdf9%22%2C%22theme_color%22%3A%22%23f7a8c4%22%2C%22icons%22%3A%5B%7B%22src%22%3A%22icon.png%22%2C%22sizes%22%3A%22192x192%22%2C%22type%22%3A%22image%2Fpng%22%7D%5D%7D">
     <link rel="apple-touch-icon" href="icon.png">
     <meta name="apple-mobile-web-app-capable" content="yes">
@@ -1079,7 +1079,7 @@
                 </div>
                 <div class="filter-row" style="align-items:center;margin-top:10px;"><label>🔊 操作音效：</label><button class="btn-sm" id="soundToggleBtn" onclick="toggleSound()">🔊 开启</button><span style="font-size:11px;color:var(--text-muted);" id="soundStatus">音效已开启</span></div>
                 <div class="filter-row" style="align-items:center;margin-top:8px;"><label>🎙️ 学习页自动朗读：</label><button class="btn-sm" id="autoReadToggleBtn" onclick="toggleAutoReadOnReview()">🔇 关闭</button><span style="font-size:11px;color:var(--text-muted);" id="autoReadStatus">自动朗读已关闭</span></div>
-                <button class="btn-primary" onclick="toggleDarkMode()" style="margin-top:8px;">🌙 夜间模式</button>
+                <button class="btn-primary" id="darkModeToggleBtn" onclick="toggleDarkMode()" style="margin-top:8px;">🌙 夜间模式</button>
                 <button class="btn-primary" style="margin-top:6px;" onclick="toggleLang()">🇰🇷 한국어 모드</button>
             </div>
         </div>
@@ -1150,6 +1150,8 @@
         let spellWord = null, spellList = [], spellErrorList = [], spellCheckedCurrent = false, spellTotalCount = 0, spellCurrentErrorCount = 0;
         let spellIsCorrect = false;
         let spellCompleted = false;
+        let spellRetryCount = 0;        // 新增：历史回炉次数（只增不减）
+        let spellInitialTotal = 0;      // 新增：本次拼写初始单词总数
         let reviewList = [], reviewIndex = 0;
         let editingWordId = null;
         let dragSrcId = null, bookDragSrcId = null, groupDragSrcId = null;
@@ -1198,7 +1200,9 @@
         function selectSpeakerIcon(iconId) { appData.settings.speakerIcon=iconId; saveData(); updateSpeakerIcons(); playSoundEffect('click'); }
 
         function ensureErrorBook() { if(!appData.books.find(b=>b.id===ERROR_BOOK_ID)){ appData.books.push({id:ERROR_BOOK_ID,name:ERROR_BOOK_NAME,groups:[],words:[],color:'#e0a0a0'}); } }
-        function addWordToErrorBook(korean,chinese,pos,example) { ensureErrorBook(); const eb=appData.books.find(b=>b.id===ERROR_BOOK_ID); if(!eb.words.find(w=>w.korean===korean)){ eb.words.push({id:Date.now()+Math.random(),korean,chinese,pos,example,nextReview:Date.now(),reviewCount:0,mastered:false,wrongCount:0,notes:'',groupId:null,spellErrorCount:1}); } else { const ew=eb.words.find(w=>w.korean===korean); if(ew) ew.spellErrorCount=(ew.spellErrorCount||0)+1; } saveData(); }        function initData() {
+        function addWordToErrorBook(korean,chinese,pos,example) { ensureErrorBook(); const eb=appData.books.find(b=>b.id===ERROR_BOOK_ID); if(!eb.words.find(w=>w.korean===korean)){ eb.words.push({id:Date.now()+Math.random(),korean,chinese,pos,example,nextReview:Date.now(),reviewCount:0,mastered:false,wrongCount:0,notes:'',groupId:null,spellErrorCount:1}); } else { const ew=eb.words.find(w=>w.korean===korean); if(ew) ew.spellErrorCount=(ew.spellErrorCount||0)+1; } saveData(); }
+
+        function initData() {
             let raw = localStorage.getItem(STORAGE_KEY);
             if (raw) {
                 try { appData = JSON.parse(raw); } catch(e) { initDefault(); return; }
@@ -1275,13 +1279,39 @@
         // ---------- 优化后的拼写页 ----------
         function getPracticeWords() { let words=getWords().filter(w=>!w.mastered); const gf=document.getElementById('spellGroupFilter')?.value; if(gf) words=words.filter(w=>w.groupId===gf); return words; }
         function populateSpellGroupFilter() { const sel=document.getElementById('spellGroupFilter'); if(!sel)return; const book=getActiveBook(), groups=book.groups||[]; const savedValue=appData.settings.savedSpellGroup||sel.value||''; sel.innerHTML='<option value="">全部词组</option>'; groups.forEach(g=>{ sel.innerHTML+=`<option value="${escapeHTML(g.id)}">📁 ${escapeHTML(g.name)}</option>`; }); if(groups.length===0) sel.innerHTML+='<option value="" disabled>— 无分组 —</option>'; if(savedValue&&[...sel.options].some(o=>o.value===savedValue)) sel.value=savedValue; }
-        function startSpell() { const sel=document.getElementById('spellGroupFilter'); if(sel) appData.settings.savedSpellGroup=sel.value; saveData(); spellCompleted=false; let words=getPracticeWords(); const order=appData.settings.spellOrder||'random'; if(order==='sequential'){} else if(order==='reverse'){ words.reverse(); } else { words=[...words].sort(()=>Math.random()-0.5); } spellList=words; spellErrorList=[]; spellCheckedCurrent=false; spellTotalCount=0; spellCurrentErrorCount=0; spellIsCorrect=false; updateSpellProgress(); if(!spellList.length){ document.getElementById('spellProgress').innerText='没有可练习的单词'; document.getElementById('spellChineseRow').style.display='none'; document.getElementById('spellInput').value=''; document.getElementById('spellFeedback').innerHTML=''; document.getElementById('spellFadeHint').innerHTML=''; document.getElementById('spellPOS').style.display='none'; spellWord=null; spellCompleted=true; return; } document.getElementById('spellChineseRow').style.display='flex'; resetSpellButton(); nextSpellWord(); }
+        function startSpell() { const sel=document.getElementById('spellGroupFilter'); if(sel) appData.settings.savedSpellGroup=sel.value; saveData(); let words=getPracticeWords(); const order=appData.settings.spellOrder||'random'; if(order==='sequential'){} else if(order==='reverse'){ words.reverse(); } else { words=[...words].sort(()=>Math.random()-0.5); } spellList=words; spellErrorList=[]; spellCheckedCurrent=false; spellTotalCount=0; spellCurrentErrorCount=0; spellIsCorrect=false; spellRetryCount=0;        // 重置回炉次数
+        spellInitialTotal=words.length; // 记录初始总数
+        spellCompleted=false;
+        updateSpellProgress(); if(!spellList.length){ document.getElementById('spellProgress').innerText='没有可练习的单词'; document.getElementById('spellChineseRow').style.display='none'; document.getElementById('spellInput').value=''; document.getElementById('spellFeedback').innerHTML=''; document.getElementById('spellFadeHint').innerHTML=''; document.getElementById('spellPOS').style.display='none'; spellWord=null; spellCompleted=true; return; } document.getElementById('spellChineseRow').style.display='flex'; resetSpellButton(); nextSpellWord(); }
         function resetSpell() { spellCheckedCurrent=false; spellCurrentErrorCount=0; spellIsCorrect=false; spellCompleted=false; document.getElementById('spellFeedback').innerHTML=''; document.getElementById('spellFadeHint').innerHTML=''; resetSpellButton(); playSoundEffect('click'); startSpell(); }
         function resetSpellButton() { const btn=document.getElementById('spellCheckBtn'); const skipBtn=document.getElementById('spellSkipBtn'); if(btn){ btn.innerText='确认'; btn.onclick=function(){handleSpellAction();}; } if(skipBtn) skipBtn.style.display=''; }
-        function updateSpellProgress() { const uniqueErrorIds = new Set(spellErrorList.map(w => w.id));
-const uniqueErrorCount = uniqueErrorIds.size;
-const total = spellList.length + (spellWord ? 1 : 0) + uniqueErrorCount + spellTotalCount; const done=spellTotalCount; const bar=document.getElementById('spellProgressBar'), text=document.getElementById('spellProgress'), wrap=document.getElementById('spellProgressWrap'); if(total>0&&done<=total){ bar.style.width=Math.round((done/total)*100)+'%'; if(wrap)wrap.style.display='block'; if(text)text.style.display='block'; } else { bar.style.width='0%'; if(wrap)wrap.style.display='none'; if(text)text.style.display='none'; } }
-        function nextSpellWord() { if(!spellList.length){ if(spellErrorList.length){ spellList=[...spellErrorList]; spellErrorList=[]; } else { document.getElementById('spellProgress').innerText=`🎉 拼写完成！已拼写 ${spellTotalCount} 个`; document.getElementById('spellChineseRow').style.display='none'; document.getElementById('spellInput').value=''; document.getElementById('spellFeedback').innerHTML=''; document.getElementById('spellFadeHint').innerHTML=''; document.getElementById('spellPOS').style.display='none'; spellWord=null; spellCompleted=true; updateSpellProgress(); return; } } spellWord=spellList.shift(); document.getElementById('spellChinese').innerText=spellWord.chinese; const posEl=document.getElementById('spellPOS'); if(spellWord.pos){ posEl.innerText=spellWord.pos; posEl.style.display='inline-block'; } else { posEl.style.display='none'; } document.getElementById('spellInput').value=''; document.getElementById('spellFeedback').innerHTML=''; document.getElementById('spellFadeHint').innerHTML=''; const total=spellList.length+(spellWord?1:0)+spellErrorList.length+spellTotalCount; const done=spellTotalCount; document.getElementById('spellProgress').innerText=`${done} / ${total}`; spellCheckedCurrent=false; spellCurrentErrorCount=0; spellIsCorrect=false; spellCompleted=false; resetSpellButton(); updateSpellProgress(); setTimeout(()=>document.getElementById('spellInput').focus(),150); }
+
+        function updateSpellProgress() {
+            // 新的分母 = 初始单词数 + 历史累计回炉次数（只增不减）
+            const total = spellInitialTotal + spellRetryCount;
+            const done = spellTotalCount;   // 已完成次数（分子只增不减）
+            const bar = document.getElementById('spellProgressBar');
+            const text = document.getElementById('spellProgress');
+            const wrap = document.getElementById('spellProgressWrap');
+            if (total > 0 && done <= total) {
+                bar.style.width = Math.round((done / total) * 100) + '%';
+                if (wrap) wrap.style.display = 'block';
+                if (text) {
+                    text.style.display = 'block';
+                    text.innerText = `${done} / ${total}`;
+                }
+            } else if (total === 0) {
+                bar.style.width = '0%';
+                if (wrap) wrap.style.display = 'none';
+                if (text) text.style.display = 'none';
+            } else {
+                // done > total 时展示为满进度（所有轮次完成）
+                bar.style.width = '100%';
+                if (text) text.innerText = `${done} / ${done}`;
+            }
+        }
+
+        function nextSpellWord() { if(!spellList.length){ if(spellErrorList.length){ spellList=[...spellErrorList]; spellErrorList=[]; } else { document.getElementById('spellProgress').innerText=`🎉 拼写完成！已拼写 ${spellTotalCount} 个`; document.getElementById('spellChineseRow').style.display='none'; document.getElementById('spellInput').value=''; document.getElementById('spellFeedback').innerHTML=''; document.getElementById('spellFadeHint').innerHTML=''; document.getElementById('spellPOS').style.display='none'; spellWord=null; spellCompleted=true; updateSpellProgress(); return; } } spellWord=spellList.shift(); document.getElementById('spellChinese').innerText=spellWord.chinese; const posEl=document.getElementById('spellPOS'); if(spellWord.pos){ posEl.innerText=spellWord.pos; posEl.style.display='inline-block'; } else { posEl.style.display='none'; } document.getElementById('spellInput').value=''; document.getElementById('spellFeedback').innerHTML=''; document.getElementById('spellFadeHint').innerHTML=''; document.getElementById('spellProgress').innerText=''; spellCheckedCurrent=false; spellCurrentErrorCount=0; spellIsCorrect=false; spellCompleted=false; resetSpellButton(); updateSpellProgress(); setTimeout(()=>document.getElementById('spellInput').focus(),150); }
         function handleSpellAction() { if(spellIsCorrect){ nextSpellWord(); return; } checkSpell(); }
 
         function checkSpell() {
@@ -1292,7 +1322,8 @@ const total = spellList.length + (spellWord ? 1 : 0) + uniqueErrorCount + spellT
             let cleanedInput=cleanForComparison(input);
             let cleanedCorrect=cleanForComparison(spellWord.korean);
            
-            if(cleanedInput===cleanedCorrect){spellTotalCount++;
+            if(cleanedInput===cleanedCorrect){
+                spellTotalCount++;
                 document.getElementById('spellFeedback').innerHTML=`<span class="correct">✅ 正确！${escapeHTML(spellWord.korean)}</span>`;
                 document.getElementById('spellFadeHint').innerHTML='';
                 spellCurrentErrorCount=0;
@@ -1311,46 +1342,45 @@ const total = spellList.length + (spellWord ? 1 : 0) + uniqueErrorCount + spellT
                 const skipBtn=document.getElementById('spellSkipBtn');
                 if(btn){ btn.innerText='下一词'; btn.onclick=function(){nextSpellWord();}; }
                 if(skipBtn) skipBtn.style.display='none';
+                    } else {
+            spellCurrentErrorCount++;
+            spellTotalCount++;       // ✅ 本次尝试完成，分子 +1
+            spellRetryCount++;       // ✅ 新增一个回炉任务，分母 +1
+            if(!appData.settings.spellErrorCounts) appData.settings.spellErrorCounts={};
+            appData.settings.spellErrorCounts[spellWord.korean]=(appData.settings.spellErrorCounts[spellWord.korean]||0)+1;
+            const totalErrors = appData.settings.spellErrorCounts[spellWord.korean];
+            document.getElementById('spellFeedback').innerHTML = '<span class="incorrect">🙅‍♀️再试一次吧~</span>';
+            // 拼错2次就显示答案提示
+            if (totalErrors >= 2) {
+                document.getElementById('spellFadeHint').innerHTML = `💡 提示：<b>${escapeHTML(spellWord.korean)}</b>`;
+                document.getElementById('spellFadeHint').style.opacity = '0.8';
             } else {
-                spellCurrentErrorCount++;
-                if(!appData.settings.spellErrorCounts) appData.settings.spellErrorCounts={};
-                appData.settings.spellErrorCounts[spellWord.korean]=(appData.settings.spellErrorCounts[spellWord.korean]||0)+1;
-                const totalErrors = appData.settings.spellErrorCounts[spellWord.korean];
-document.getElementById('spellFeedback').innerHTML = '<span class="incorrect">🙅‍♀️再试一次吧~</span>';
-
-// 拼错2次就显示答案提示
-if (totalErrors >= 2) {
-    document.getElementById('spellFadeHint').innerHTML = `💡 提示：<b>${escapeHTML(spellWord.korean)}</b>`;
-    document.getElementById('spellFadeHint').style.opacity = '0.8';
-} else {
-    document.getElementById('spellFadeHint').innerHTML = '';
-}
-
-// 拼错4次才加入错词本
-if (totalErrors >= SPELL_ERROR_THRESHOLD) {
-    addWordToErrorBook(spellWord.korean, spellWord.chinese, spellWord.pos || '', spellWord.example || '');
-}  
-              // 加入重试队列（去重）
-                if(!spellErrorList.some(w=>w.id===spellWord.id)){
-                    spellErrorList.push(spellWord);
-                }
-                appData.stats.todayTotal++;
-                appData.stats.todayReviewCount++;
-                saveData();
-                updateStats();
-                playSoundEffect('spellError');
-                spellCheckedCurrent=false;
-                document.getElementById('spellInput').value='';
-                setTimeout(()=>document.getElementById('spellInput').focus(),150);
+                document.getElementById('spellFadeHint').innerHTML = '';
             }
-            updateSpellProgress();
+            // 拼错4次才加入错词本
+            if (totalErrors >= SPELL_ERROR_THRESHOLD) {
+                addWordToErrorBook(spellWord.korean, spellWord.chinese, spellWord.pos || '', spellWord.example || '');
+            }
+            // 加入重试队列（去重）
+            if (!spellErrorList.some(w => w.id === spellWord.id)) {
+                spellErrorList.push(spellWord);
+            }
+            appData.stats.todayTotal++;
+            appData.stats.todayReviewCount++;
+            saveData();
+            updateStats();
+            playSoundEffect('spellError');
+            spellCheckedCurrent=false;
+            document.getElementById('spellInput').value='';
+            setTimeout(()=>document.getElementById('spellInput').focus(),150);
+        }
+        updateSpellProgress();
         }
 
         function skipSpellWord() {
             if(!spellWord||spellCheckedCurrent||spellIsCorrect)return;
             spellCheckedCurrent=true;
             spellTotalCount++;
-            // 独立跳过计数器
             if(!appData.settings.spellSkipCounts) appData.settings.spellSkipCounts={};
             appData.settings.spellSkipCounts[spellWord.korean]=(appData.settings.spellSkipCounts[spellWord.korean]||0)+1;
             const totalSkips=appData.settings.spellSkipCounts[spellWord.korean];
@@ -1359,8 +1389,9 @@ if (totalErrors >= SPELL_ERROR_THRESHOLD) {
             }
             document.getElementById('spellFeedback').innerHTML=`<span class="incorrect">⏭️ 正确答案：<b>${escapeHTML(spellWord.korean)}</b></span>`;
             document.getElementById('spellFadeHint').innerHTML='';
-            // 加入重试队列（去重）
+            // 加入重试队列（去重），并增加回炉计数
             if(!spellErrorList.some(w=>w.id===spellWord.id)){
+                spellRetryCount++;   // 新回炉，分母增加
                 spellErrorList.push(spellWord);
             }
             appData.stats.todayTotal++;
@@ -1370,7 +1401,9 @@ if (totalErrors >= SPELL_ERROR_THRESHOLD) {
             playSoundEffect('spellError');
             updateSpellProgress();
             nextSpellWord();
-        }        // ---------- 词库管理 ----------
+        }
+
+        // ---------- 词库管理（略，与原代码相同）----------
         function updateBookDisplay() { const book=getActiveBook(); const color=book.color||'#f7a8c4'; document.getElementById('currentBookName').innerHTML=`<span class="color-dot" style="background:${color};"></span>${book.name}`; }
         function openBookList() { renderBookListPopup(); document.getElementById('bookListPopup').style.display='flex'; }
         function renderBookListPopup() { let html=appData.books.map((b,idx)=>{ const isActive=b.id===appData.activeBookId; const color=b.color||'#f7a8c4'; return `<div class="book-entry" draggable="true" id="book-${escapeHTML(b.id)}" ondragstart="handleBookDragStart(event)" ondragover="handleBookDragOver(event)" ondrop="handleBookDrop(event)" ondragend="handleBookDragEnd(event)" style="background:${isActive?'var(--group-bg)':'var(--card-bg)'};"><span onclick="switchBook('${escapeHTML(b.id)}')" style="cursor:pointer;flex:1;min-width:0;word-break:break-all;display:flex;align-items:center;"><span class="color-dot" style="background:${color};"></span>${escapeHTML(b.name)} (${b.words.length}词)</span><div style="display:flex;gap:2px;align-items:center;"><button onclick="event.stopPropagation();copyBook('${escapeHTML(b.id)}')" title="复制单词本" style="background:none;border:none;cursor:pointer;padding:4px;color:var(--text);"><svg width="16" height="16" viewBox="0 0 24 24" style="stroke:currentColor;fill:none;"><use href="#icon-copy"/></svg></button><button onclick="event.stopPropagation();editBookColor('${escapeHTML(b.id)}')" title="修改颜色" style="background:none;border:none;cursor:pointer;padding:4px;color:var(--text);">🎨</button><button onclick="event.stopPropagation();renameBook('${escapeHTML(b.id)}')" title="重命名" style="background:none;border:none;cursor:pointer;padding:4px;color:var(--text);"><svg width="16" height="16" viewBox="0 0 24 24" style="stroke:currentColor;fill:none;"><use href="#icon-edit-pencil"/></svg></button>${b.id===ERROR_BOOK_ID?'<span style="font-size:16px;color:var(--text-muted);padding:4px;">🔒</span>':`<button onclick="event.stopPropagation();deleteBook('${escapeHTML(b.id)}')" title="删除" style="background:none;border:none;cursor:pointer;padding:4px;color:var(--text);"><svg width="16" height="16" viewBox="0 0 24 24" style="stroke:currentColor;fill:none;"><use href="#icon-trash-3"/></svg></button>`}</div></div>`; }).join(''); document.getElementById('bookListContainer').innerHTML=html; const activeBook=appData.books.find(b=>b.id===appData.activeBookId); document.querySelectorAll('#newBookColorPicker .color-picker-option').forEach(el=>{ el.classList.toggle('selected',el.dataset.color===(activeBook?activeBook.color:'#f7a8c4')); el.onclick=function(){ document.querySelectorAll('#newBookColorPicker .color-picker-option').forEach(e=>e.classList.remove('selected')); this.classList.add('selected'); }; }); }
@@ -1393,7 +1426,7 @@ if (totalErrors >= SPELL_ERROR_THRESHOLD) {
         function handleBookDrop(e) { e.preventDefault(); const target=e.target.closest('.book-entry'); const targetId=target?.id.replace('book-',''); if(!bookDragSrcId||!targetId||bookDragSrcId===targetId)return; const srcIndex=appData.books.findIndex(b=>b.id===bookDragSrcId); const targetIndex=appData.books.findIndex(b=>b.id===targetId); if(srcIndex>-1&&targetIndex>-1){ const moved=appData.books.splice(srcIndex,1)[0]; appData.books.splice(targetIndex,0,moved); saveData(); renderBookListPopup(); } bookDragSrcId=null; }
         function handleBookDragEnd(e) { document.querySelectorAll('.book-entry.dragging').forEach(el=>el.classList.remove('dragging')); bookDragSrcId=null; }
 
-        // 分组管理
+        // 分组管理（略，与原代码相同）
         function populateGroupSelects() { const book=getActiveBook(); if(!book||book.id===MASTERED_BOOK_ID)return; const groups=book.groups||[]; ['inputGroup','batchMoveGroup','batchGroup'].forEach(sid=>{ const sel=document.getElementById(sid); if(!sel)return; const cv=sel.value; if(sid==='batchMoveGroup'){ sel.innerHTML='<option value="">移动到...</option><option value="__none__">📁 无分组</option>'; } else { sel.innerHTML='<option value="">📁 无分组</option>'; } groups.forEach(g=>{ sel.innerHTML+=`<option value="${escapeHTML(g.id)}" ${cv===g.id?'selected':''}>📁 ${escapeHTML(g.name)}</option>`; }); }); }
         function createNewGroup() { const n=prompt('请输入新分组名称：'); if(!n||!n.trim())return; const book=getActiveBook(); if(!book||book.id===MASTERED_BOOK_ID)return; if(!book.groups)book.groups=[]; const gid='g'+Date.now(); book.groups.push({id:gid,name:n.trim()}); saveData(); populateGroupSelects(); document.getElementById('inputGroup').value=gid; populateSpellGroupFilter(); populateReviewGroupFilter(); renderWordList(); playSoundEffect('add'); }
         function openGroupManager() { if(appData.activeBookId===MASTERED_BOOK_ID){alert('熟词箱不支持分组管理');return;} document.getElementById('gmBookName').innerText=getActiveBook().name; renderGroupManagerList(); document.getElementById('groupManagerPopup').style.display='flex'; }
@@ -1409,7 +1442,7 @@ if (totalErrors >= SPELL_ERROR_THRESHOLD) {
         function closeGroupManager(e) { if(e.target===document.getElementById('groupManagerPopup')) document.getElementById('groupManagerPopup').style.display='none'; }
         function closeGroupManagerDirect() { document.getElementById('groupManagerPopup').style.display='none'; }
 
-        // 单词列表
+        // 单词列表（略，与原代码相同）
         function toggleWordList() { appData.wordListCollapsed=!appData.wordListCollapsed; saveData(); applyWordListCollapseState(); }
         function applyWordListCollapseState() { const c=document.getElementById('wordListContainer'), i=document.getElementById('wordListToggleIcon'), t=document.getElementById('wordListToggleText'); if(appData.wordListCollapsed){ c.classList.add('collapsed'); if(i)i.innerText='▸'; if(t)t.innerText='展开单词列表'; } else { c.classList.remove('collapsed'); if(i)i.innerText='▾'; if(t)t.innerText='折叠单词列表'; } updateWordListCount(); }
         function updateWordListCount() { const ce=document.getElementById('wordListCount'); if(ce){ const book=getActiveBook(); const vw=appData.showMastered?book.words.filter(w=>w.mastered):book.words.filter(w=>!w.mastered); ce.innerText=`(${vw.length}个单词)`; } }
@@ -1420,7 +1453,7 @@ if (totalErrors >= SPELL_ERROR_THRESHOLD) {
         function exportAllData() { let eo={version:'v12',exportedAt:new Date().toISOString(),data:JSON.parse(JSON.stringify(appData))}, js=JSON.stringify(eo,null,2), blob=new Blob([js],{type:'application/json;charset=utf-8'}), url=URL.createObjectURL(blob), a=document.createElement('a'); a.href=url; a.download=`korean-backup-${new Date().toISOString().slice(0,10)}.json`; a.click(); URL.revokeObjectURL(url); }
         function handleImportJson(event) { let file=event.target.files[0]; if(!file)return; let reader=new FileReader(); reader.onload=function(e){ try{ let raw=JSON.parse(e.target.result); let data=raw.data||raw; if(!data.books||!Array.isArray(data.books)){alert('❌ 无效的备份文件格式（缺少单词本数据）');return;} if(!confirm('⚠️ 导入将合并单词到当前词库，不会覆盖原有数据。确定继续吗？'))return; data.books.forEach(b=>{if(!b.groups)b.groups=[];if(!b.color)b.color='#f7a8c4';b.words.forEach(w=>{if(!w.notes)w.notes='';if(w.groupId===undefined)w.groupId=null;});}); data.books.forEach(importedBook=>{ const existingBook=appData.books.find(b=>b.id===importedBook.id); if(existingBook){ importedBook.words.forEach(iw=>{ const exists=existingBook.words.some(ew=>ew.korean===iw.korean); if(!exists){ iw.id=Date.now()+Math.random(); if(iw.groupId&&importedBook.groups){ const importedGroup=importedBook.groups.find(g=>g.id===iw.groupId); if(importedGroup){ const targetGroup=existingBook.groups.find(g=>g.name===importedGroup.name); iw.groupId=targetGroup?targetGroup.id:null; }else{iw.groupId=null;} }else{iw.groupId=null;} existingBook.words.push(iw); } }); if(importedBook.groups&&existingBook.groups){ importedBook.groups.forEach(ig=>{ const existsGroup=existingBook.groups.find(eg=>eg.name===ig.name); if(!existsGroup){existingBook.groups.push({id:ig.id,name:ig.name});} }); } } else { if(!importedBook.groups)importedBook.groups=[]; importedBook.words.forEach(w=>{if(w.groupId&&!importedBook.groups.find(g=>g.id===w.groupId)){w.groupId=null;}}); appData.books.push(importedBook); } }); saveData(); expandedWordIds.clear(); selectedWordIds.clear(); showAllMeanings=false; updateToggleAllMeaningsBtn(); updateMasteredFilterBtn(); applySettings(); updateBookDisplay(); populateSpellGroupFilter(); populateReviewGroupFilter(); renderWordList(); switchTab(currentActiveTab); alert('✅ 数据合并成功！'); }catch(err){alert('❌ 文件解析失败：'+err.message);} }; reader.readAsText(file); event.target.value=''; }
 
-        // 渲染单词列表
+        // 单词列表渲染（略，与原代码相同）
         function toggleGroupCollapse(groupId) { if(!appData.collapsedGroups)appData.collapsedGroups={}; appData.collapsedGroups[groupId]=!appData.collapsedGroups[groupId]; saveData(); renderWordList(); }
         function toggleWordExpand(e,wordId) { e.stopPropagation(); if(expandedWordIds.has(wordId)){expandedWordIds.delete(wordId);}else{expandedWordIds.add(wordId);const w=getWords().find(w=>String(w.id)===String(wordId));if(w&&w.korean){speak(w.korean);}} renderWordList(); }
         function toggleAllMeanings() { showAllMeanings=!showAllMeanings; if(showAllMeanings){const words=appData.showMastered?getActiveBook().words.filter(w=>w.mastered):getActiveBook().words.filter(w=>!w.mastered);words.forEach(w=>expandedWordIds.add(String(w.id)));}else{expandedWordIds.clear();} updateToggleAllMeaningsBtn(); renderWordList(); }
@@ -1492,7 +1525,7 @@ if (totalErrors >= SPELL_ERROR_THRESHOLD) {
         function deleteWordFromSearch(id) { if(!confirm('确定删除此单词吗？'))return; appData.books.forEach(b=>{b.words=b.words.filter(w=>String(w.id)!==String(id));}); expandedWordIds.delete(String(id)); selectedWordIds.delete(String(id)); saveData(); renderWordList(); populateSpellGroupFilter(); populateReviewGroupFilter(); if(currentActiveTab==='review')loadReviewWord(); else if(currentActiveTab==='spell')startSpell(); doSearch(); }
         function doSearch() { let q=document.getElementById('searchInput').value.trim().toLowerCase(); if(!q){document.getElementById('searchResults').innerHTML='<p style="color:var(--text-muted);">输入关键词开始搜索</p>';return;} let results=[]; appData.books.forEach(b=>{const groups=b.groups||[];b.words.forEach(w=>{if(w.korean.toLowerCase().includes(q)||w.chinese.toLowerCase().includes(q)||(w.notes&&w.notes.toLowerCase().includes(q))){let groupName='无分组';if(w.groupId){const g=groups.find(gr=>gr.id===w.groupId);groupName=g?g.name:'无分组';}results.push({...w,bookName:b.name,groupName:groupName});}});}); const highlight=(text,query)=>{if(!query)return escapeHTML(text);const escapedQuery=query.replace(/[.*+?^${}()|[\]\\]/g,'\\$&');const regex=new RegExp(`(${escapedQuery})`,'gi');return escapeHTML(text).replace(regex,'<mark>$1</mark>');}; document.getElementById('searchResults').innerHTML=results.slice(0,50).map(r=>{return `<div style="padding:8px;background:var(--card-bg);margin:4px 0;border-radius:8px;display:flex;align-items:center;gap:8px;"><span style="flex:1;cursor:pointer;" onclick="closeSearchDirect();showWordDetail('${escapeHTML(String(r.id))}')"><b>${highlight(r.korean,q)}</b> - ${highlight(r.chinese,q)}<span style="color:var(--text-muted);font-size:11px;">[${escapeHTML(r.bookName)} › ${escapeHTML(r.groupName)}]</span></span><button onclick="event.stopPropagation();deleteWordFromSearch('${escapeHTML(String(r.id))}')" title="删除" style="background:none;border:none;cursor:pointer;padding:4px;color:#c0a0a0;flex-shrink:0;"><svg width="16" height="16" viewBox="0 0 24 24" style="stroke:currentColor;fill:none;"><use href="#icon-trash-3"/></svg></button></div>`;}).join('')||'<p style="color:var(--text-muted);">无结果</p>'; }
 
-        // 统计与设置
+        // 统计与设置（略，与原代码相同）
         function updateStats() { let s=appData.stats; document.getElementById('statNew').innerText=s.todayNewCount; document.getElementById('statReview').innerText=s.todayReviewCount; document.getElementById('statCorrect').innerText=s.todayTotal?Math.round((s.todayCorrect/s.todayTotal)*100)+'%':'0%'; document.getElementById('statStreak').innerText=s.streak; renderCalendar(); renderEbbinghausCurve(); updateSettingsDisplay(); }
         function updateSettingsDisplay() { let ri=appData.settings.reviewIntervals; document.getElementById('setHardMin').value=ri.hardMin||10; document.getElementById('setFuzzyHr').value=ri.fuzzyHr||4; document.getElementById('setEasyStages').value=(ri.easyStages||[1,3,7,15,30]).join(','); document.getElementById('reminderTime').value=appData.settings.reminderTime||'09:00'; document.getElementById('reminderToggleBtn').innerText=appData.settings.reminderEnabled?'🔔 关闭':'🔔 开启'; document.getElementById('reminderStatus').innerText=appData.settings.reminderEnabled?`提醒已开启 · 每天 ${appData.settings.reminderTime}`:'提醒已关闭'; document.getElementById('dailyNewGoal').value=appData.stats.dailyNewGoal; document.getElementById('fontSizeInput').value=appData.settings.fontSize; document.getElementById('soundToggleBtn').innerText=appData.settings.soundEnabled?'🔊 开启':'🔇 关闭'; document.getElementById('soundStatus').innerText=appData.settings.soundEnabled?'音效已开启':'音效已关闭'; document.getElementById('autoReadToggleBtn').innerText=appData.settings.autoReadOnReview?'🎙️ 开启':'🔇 关闭'; document.getElementById('autoReadStatus').innerText=appData.settings.autoReadOnReview?'自动朗读已开启':'自动朗读已关闭'; applyOrderOptions(); updateBackupReminderStatus(); }
         function updateBackupReminderStatus() { const el=document.getElementById('backupReminderStatus'); if(el){el.innerText=appData.settings.backupReminderEnabled?'自动备份提醒：开启':'自动备份提醒：关闭';} }
@@ -1507,8 +1540,23 @@ if (totalErrors >= SPELL_ERROR_THRESHOLD) {
         function setupReminder() { if(reminderTimer)clearInterval(reminderTimer); if(!appData.settings.reminderEnabled)return; reminderTimer=setInterval(()=>{let now=new Date(),[h,m]=(appData.settings.reminderTime||'09:00').split(':').map(Number);if(now.getHours()===h&&now.getMinutes()===m&&now.getSeconds()<5&&Notification.permission==='granted'){new Notification('📚 该背单词啦！',{body:`当前有 ${getReviewableWords().length} 个单词待复习~`,icon:'data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><text y="20" font-size="20">📚</text></svg>',tag:'korean-reminder'});}},30000); }
         function toggleSound() { appData.settings.soundEnabled=!appData.settings.soundEnabled; saveData(); updateSettingsDisplay(); if(appData.settings.soundEnabled){playSoundEffect('click');} }
         function toggleAutoReadOnReview() { appData.settings.autoReadOnReview=!appData.settings.autoReadOnReview; saveData(); updateSettingsDisplay(); if(appData.settings.autoReadOnReview){playSoundEffect('click');} }
-        function applySettings() { if(appData.settings.darkMode) document.body.classList.add('dark'); changeFontSize(appData.settings.fontSize); updateSpeakerIcons(); updateStats(); if(appData.settings.reminderEnabled)setupReminder(); updateSettingsDisplay(); checkBackupReminder(); updateMasteredFilterBtn(); const today=new Date().toDateString(); const btn=document.getElementById('checkInBtn'); if(btn&&appData.stats.checkIns.includes(today)){btn.disabled=true;btn.style.opacity='0.5';btn.style.pointerEvents='none';btn.innerText='✅ 已打卡';} }
-        function toggleDarkMode() { document.body.classList.toggle('dark'); appData.settings.darkMode=!appData.settings.darkMode; saveData(); }
+        function applySettings() { if(appData.settings.darkMode) document.body.classList.add('dark'); changeFontSize(appData.settings.fontSize); updateSpeakerIcons(); updateStats(); if(appData.settings.reminderEnabled)setupReminder(); updateSettingsDisplay(); checkBackupReminder();         updateDarkModeButton();updateMasteredFilterBtn(); const today=new Date().toDateString(); const btn=document.getElementById('checkInBtn'); if(btn&&appData.stats.checkIns.includes(today)){btn.disabled=true;btn.style.opacity='0.5';btn.style.pointerEvents='none';btn.innerText='✅ 已打卡';} }
+        function toggleDarkMode() {
+    document.body.classList.toggle('dark');
+    appData.settings.darkMode = document.body.classList.contains('dark');
+    updateDarkModeButton();
+    saveData();
+}
+
+function updateDarkModeButton() {
+    const btn = document.getElementById('darkModeToggleBtn');
+    if (!btn) return;
+    if (document.body.classList.contains('dark')) {
+        btn.innerHTML = '☀️ 日间模式';
+    } else {
+        btn.innerHTML = '🌙 夜间模式';
+    }
+}
         function changeFontSize(size) { appData.settings.fontSize=parseInt(size)||36; document.querySelectorAll('.word-korean').forEach(el=>el.style.fontSize=appData.settings.fontSize+'px'); document.getElementById('fontSizeInput').value=appData.settings.fontSize; saveData(); }
         function toggleLang() { const isKo=appData.settings.lang==='zh'; appData.settings.lang=isKo?'ko':'zh'; const navs=document.querySelectorAll('.nav-item'); if(navs.length>=5){navs[0].innerHTML=`<svg viewBox="0 0 24 24" style="stroke:currentColor;fill:none;"><use href="#icon-cat"/></svg>${isKo?'학습':'学习'}`; navs[1].innerHTML=`<svg viewBox="0 0 24 24" style="stroke:currentColor;fill:none;"><use href="#icon-bunny"/></svg>${isKo?'철자':'拼写'}`; navs[2].innerHTML=`<svg viewBox="0 0 24 24" style="stroke:currentColor;fill:none;"><use href="#icon-bear"/></svg>${isKo?'단어장':'词库'}`; navs[3].innerHTML=`<svg viewBox="0 0 24 24" style="stroke:currentColor;fill:none;"><use href="#icon-star"/></svg>${isKo?'내정보':'我的'}`; navs[4].innerHTML=`<svg viewBox="0 0 24 24" style="stroke:currentColor;fill:none;"><use href="#icon-gear"/></svg>${isKo?'설정':'设置'}`;} saveData(); }
         function saveOrderSettings() { const reviewSel=document.getElementById('reviewOrderSelect'); const spellSel=document.getElementById('spellOrderSelect'); if(reviewSel)appData.settings.reviewOrder=reviewSel.value; if(spellSel)appData.settings.spellOrder=spellSel.value; saveData(); if(currentActiveTab==='review')loadReviewWord(); else if(currentActiveTab==='spell')startSpell(); }
